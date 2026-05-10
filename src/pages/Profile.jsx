@@ -6,7 +6,7 @@ import {
   Star, ArrowLeftRight, MapPin, CalendarDays, LayoutGrid,
   MessageSquare, Bell, Wallet as WalletIcon, ChevronRight,
   Eye, EyeOff, User, KeyRound, CheckCircle2, TrendingUp,
-  Copy, Share2, CheckCheck,
+  Copy, Share2, CheckCheck, Settings,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getPublicProfile } from '../api/users.api';
@@ -26,7 +26,7 @@ import Modal from '../components/ui/Modal';
 import Input from '../components/ui/Input';
 import { formatDistanceToNow } from 'date-fns';
 
-// ─── Settings sections ────────────────────────────────────────────────────────
+// ─── Nav config ───────────────────────────────────────────────────────────────
 const NAV = [
   { id: 'profile',       label: 'Profile',        icon: User,        group: 'Account' },
   { id: 'listings',      label: 'My Listings',     icon: LayoutGrid,  group: 'Account' },
@@ -37,34 +37,12 @@ const NAV = [
   { id: 'referrals',     label: 'Invite & Earn',   icon: Gift,        group: 'Finances' },
 ];
 
-// ─── Section: My Listings ─────────────────────────────────────────────────────
-function SectionListings({ listings }) {
+// ─── Shared section header ────────────────────────────────────────────────────
+function SectionHeader({ title, desc }) {
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-lg font-display font-bold text-ink mb-1">My Listings</h2>
-          <p className="text-sm text-gray-500">{listings?.length || 0} active listing{listings?.length !== 1 ? 's' : ''}</p>
-        </div>
-        <Link to="/create-listing">
-          <Button size="sm"><Plus size={14} /> New Listing</Button>
-        </Link>
-      </div>
-
-      {listings?.length > 0 ? (
-        <ListingGrid listings={listings} />
-      ) : (
-        <div className="text-center py-14 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <LayoutGrid size={24} className="text-gray-300" />
-          </div>
-          <p className="font-medium text-gray-500 mb-1">No listings yet</p>
-          <p className="text-sm text-gray-400 mb-4">List something you want to swap</p>
-          <Link to="/create-listing">
-            <Button size="sm"><Plus size={14} /> Create Listing</Button>
-          </Link>
-        </div>
-      )}
+    <div className="mb-6">
+      <h2 className="text-xl font-display font-bold text-gray-900">{title}</h2>
+      {desc && <p className="text-sm text-gray-400 mt-0.5">{desc}</p>}
     </div>
   );
 }
@@ -72,16 +50,15 @@ function SectionListings({ listings }) {
 // ─── Section: Profile ─────────────────────────────────────────────────────────
 function SectionProfile({ user }) {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Profile</h2>
-        <p className="text-sm text-gray-500">Your public identity on SwapNaija</p>
-      </div>
-      <div className="flex items-center gap-5 p-5 bg-gray-50 rounded-2xl">
+    <div className="space-y-5">
+      <SectionHeader title="Profile" desc="Your public identity on SwapNaija" />
+
+      {/* Avatar + info card */}
+      <div className="bg-gray-50 rounded-2xl p-5 flex items-center gap-4 border border-gray-100">
         <Avatar src={user.avatarUrl} name={user.fullName} size="xl" />
         <div className="flex-1 min-w-0">
-          <p className="font-display font-bold text-lg text-ink">{user.fullName}</p>
-          {user.username && <p className="text-sm text-gray-500">@{user.username}</p>}
+          <p className="font-display font-bold text-lg text-gray-900 leading-tight">{user.fullName}</p>
+          {user.username && <p className="text-sm text-gray-400 mt-0.5">@{user.username}</p>}
           {user.bio && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{user.bio}</p>}
           <div className="flex items-center gap-3 mt-2 flex-wrap">
             {user.locationState && (
@@ -97,20 +74,23 @@ function SectionProfile({ user }) {
             )}
           </div>
         </div>
-        <Link to="/profile/edit">
+        <Link to="/profile/edit" className="flex-none">
           <Button variant="outline" size="sm"><Edit size={14} /> Edit</Button>
         </Link>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Swaps', value: user.swapCount || 0, icon: ArrowLeftRight, color: 'text-primary' },
-          { label: 'Rating', value: user.ratingAvg?.toFixed(1) || '—', icon: Star, color: 'text-amber-500' },
-          { label: 'Reviews', value: user.ratingCount || 0, icon: MessageSquare, color: 'text-blue-500' },
+          { label: 'Swaps',   value: user.swapCount  || 0,   icon: ArrowLeftRight, color: 'bg-primary/8 text-primary' },
+          { label: 'Rating',  value: user.ratingAvg?.toFixed(1) || '—', icon: Star, color: 'bg-amber-50 text-amber-500' },
+          { label: 'Reviews', value: user.ratingCount || 0,   icon: MessageSquare,  color: 'bg-blue-50 text-blue-500' },
         ].map(({ label, value, icon: Icon, color }) => (
-          <div key={label} className="bg-gray-50 rounded-2xl p-4 text-center">
-            <Icon size={18} className={`${color} mx-auto mb-1.5`} />
-            <p className="text-xl font-display font-bold text-ink">{value}</p>
+          <div key={label} className="bg-white border border-gray-100 rounded-2xl p-4 text-center">
+            <div className={`w-9 h-9 rounded-xl ${color} flex items-center justify-center mx-auto mb-2`}>
+              <Icon size={16} />
+            </div>
+            <p className="text-2xl font-display font-bold text-gray-900">{value}</p>
             <p className="text-xs text-gray-400 mt-0.5">{label}</p>
           </div>
         ))}
@@ -119,19 +99,45 @@ function SectionProfile({ user }) {
   );
 }
 
+// ─── Section: Listings ────────────────────────────────────────────────────────
+function SectionListings({ listings }) {
+  return (
+    <div className="space-y-5">
+      <div className="flex items-start justify-between">
+        <SectionHeader title="My Listings" desc={`${listings?.length || 0} listing${listings?.length !== 1 ? 's' : ''}`} />
+        <Link to="/create-listing">
+          <Button size="sm"><Plus size={14} /> New Listing</Button>
+        </Link>
+      </div>
+      {listings?.length > 0 ? (
+        <ListingGrid listings={listings} />
+      ) : (
+        <div className="text-center py-14 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <LayoutGrid size={24} className="text-gray-300" />
+          </div>
+          <p className="font-semibold text-gray-500 mb-1">No listings yet</p>
+          <p className="text-sm text-gray-400 mb-4">List something you want to swap</p>
+          <Link to="/create-listing">
+            <Button size="sm"><Plus size={14} /> Create Listing</Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ─── Section: Security ────────────────────────────────────────────────────────
 function SectionSecurity() {
   const { changePasswordAsync, isChangingPassword } = useAuth();
-  const navigate = useNavigate();
   const [form, setForm]         = useState({ currentPassword: '', newPassword: '', confirm: '' });
   const [showCurr, setShowCurr] = useState(false);
   const [showNew, setShowNew]   = useState(false);
-
   const setField = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
   const handleSubmit = async () => {
-    if (form.newPassword !== form.confirm) { toast.error('New passwords do not match'); return; }
-    if (form.newPassword.length < 8)       { toast.error('Min. 8 characters');           return; }
+    if (form.newPassword !== form.confirm) { toast.error('Passwords do not match'); return; }
+    if (form.newPassword.length < 8)       { toast.error('Min. 8 characters');       return; }
     try {
       await changePasswordAsync({ currentPassword: form.currentPassword, newPassword: form.newPassword });
       setForm({ currentPassword: '', newPassword: '', confirm: '' });
@@ -139,21 +145,17 @@ function SectionSecurity() {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Security</h2>
-        <p className="text-sm text-gray-500">Manage your password and account access</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader title="Security" desc="Manage your password and account access" />
 
-      {/* Change password */}
-      <div className="card space-y-4">
-        <h3 className="font-semibold text-sm">Change Password</h3>
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
+        <p className="text-sm font-semibold text-gray-700">Change Password</p>
         <div className="relative">
           <Input label="Current Password" type={showCurr ? 'text' : 'password'}
             value={form.currentPassword} onChange={setField('currentPassword')}
             placeholder="Enter current password" />
           <button type="button" onClick={() => setShowCurr(v => !v)}
-            className="absolute right-3 top-9 text-gray-400">
+            className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 transition">
             {showCurr ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
@@ -162,7 +164,7 @@ function SectionSecurity() {
             value={form.newPassword} onChange={setField('newPassword')}
             placeholder="Min. 8 characters" />
           <button type="button" onClick={() => setShowNew(v => !v)}
-            className="absolute right-3 top-9 text-gray-400">
+            className="absolute right-3 top-9 text-gray-400 hover:text-gray-600 transition">
             {showNew ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
@@ -173,16 +175,16 @@ function SectionSecurity() {
           loading={isChangingPassword}
           disabled={!form.currentPassword || !form.newPassword || !form.confirm}
           onClick={handleSubmit}
+          fullWidth
         >
           Update Password
         </Button>
       </div>
 
-      {/* Forgot password */}
-      <div className="card flex items-center justify-between">
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 flex items-center justify-between">
         <div>
-          <p className="font-medium text-sm">Forgot your password?</p>
-          <p className="text-xs text-gray-400 mt-0.5">Reset it via email with a verification code</p>
+          <p className="text-sm font-semibold text-gray-800">Forgot your password?</p>
+          <p className="text-xs text-gray-400 mt-0.5">Reset via email with a one-time code</p>
         </div>
         <Link to="/forgot-password">
           <Button variant="outline" size="sm">Reset <ChevronRight size={14} /></Button>
@@ -194,38 +196,39 @@ function SectionSecurity() {
 
 // ─── Section: Verification ────────────────────────────────────────────────────
 function SectionVerification({ user }) {
-  const { refreshUser } = useAuthStore();
-  const isVerified   = user?.verification === 'verified';
-  const walletBal    = user?.walletBalance ?? 0;
-  const canAfford    = walletBal >= 100000;
+  const { user: me, refreshUser } = useAuthStore();
+  const isVerified = user?.verification === 'verified';
+  const walletBal  = me?.walletBalance ?? 0;  // use auth store for live balance
+  const canAfford  = walletBal >= 100000;
 
   const mutation = useMutation({
     mutationFn: initiateVerify,
     onSuccess: () => { refreshUser(); toast.success('Account verified!'); },
-    onError: (e) => toast.error(e.response?.data?.error || 'Verification failed'),
+    onError:   (e) => toast.error(e.response?.data?.error || 'Verification failed'),
   });
 
   const BENEFITS = [
-    { icon: ShieldCheck, color: 'text-primary',   label: 'Verified badge on your profile' },
-    { icon: Eye,         color: 'text-blue-500',  label: 'Priority in search results' },
-    { icon: Star,        color: 'text-amber-500', label: '3× higher swap acceptance rate' },
-    { icon: TrendingUp,  color: 'text-green-500', label: 'Unlocks premium features' },
+    { icon: ShieldCheck,  color: 'text-primary',   label: 'Verified badge on your profile' },
+    { icon: Eye,          color: 'text-blue-500',  label: 'Priority in search results' },
+    { icon: Star,         color: 'text-amber-500', label: '3× higher swap acceptance rate' },
+    { icon: TrendingUp,   color: 'text-green-500', label: 'Unlocks premium features' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Identity Verification</h2>
-        <p className="text-sm text-gray-500">Build trust and rank higher in search</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader title="Identity Verification" desc="Build trust and rank higher in search" />
 
-      {/* Status card */}
-      <div className={`rounded-2xl p-5 flex items-center gap-4 ${isVerified ? 'bg-primary/5 border border-primary/20' : 'bg-gray-50 border border-gray-200'}`}>
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${isVerified ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'}`}>
+      {/* Status banner */}
+      <div className={`rounded-2xl p-5 flex items-center gap-4 border ${
+        isVerified ? 'bg-primary/5 border-primary/20' : 'bg-gray-50 border-gray-200'
+      }`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-none ${
+          isVerified ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'
+        }`}>
           <ShieldCheck size={22} />
         </div>
         <div className="flex-1">
-          <p className="font-semibold text-sm">{isVerified ? 'Account Verified' : 'Not Verified'}</p>
+          <p className="font-semibold text-gray-900">{isVerified ? 'Account Verified' : 'Not Verified'}</p>
           <p className="text-xs text-gray-500 mt-0.5">
             {isVerified
               ? `Verified ${user.verifiedAt ? new Date(user.verifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}`
@@ -236,7 +239,7 @@ function SectionVerification({ user }) {
       </div>
 
       {/* Benefits */}
-      <div className="card space-y-3">
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">What you get</p>
         {BENEFITS.map(({ icon: Icon, color, label }) => (
           <div key={label} className="flex items-center gap-3">
@@ -248,9 +251,11 @@ function SectionVerification({ user }) {
       </div>
 
       {!isVerified && (
-        <div className={`rounded-2xl px-4 py-3 flex items-center justify-between ${canAfford ? 'bg-green-50 border border-green-100' : 'bg-amber-50 border border-amber-100'}`}>
+        <div className={`rounded-2xl px-5 py-4 flex items-center justify-between border ${
+          canAfford ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
+        }`}>
           <div>
-            <p className={`text-sm font-semibold ${canAfford ? 'text-green-700' : 'text-amber-700'}`}>
+            <p className={`text-sm font-semibold ${canAfford ? 'text-emerald-700' : 'text-amber-700'}`}>
               {canAfford ? 'Sufficient balance' : 'Insufficient balance'}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -274,8 +279,7 @@ function SectionNotifications() {
 
   const { data: prefs, isLoading } = useQuery({
     queryKey: ['notif-prefs'],
-    queryFn: getNotifPrefs,
-    // Seed from user model while loading
+    queryFn:  getNotifPrefs,
     placeholderData: {
       swapUpdates: user?.emailPrefs?.swapUpdates !== false,
       dailyDigest: user?.emailPrefs?.dailyDigest !== false,
@@ -285,10 +289,8 @@ function SectionNotifications() {
 
   const updateMutation = useMutation({
     mutationFn: updateNotifPrefs,
-    onSuccess: (updated) => {
-      qc.setQueryData(['notif-prefs'], updated);
-    },
-    onError: () => toast.error('Failed to save preference'),
+    onSuccess:  (updated) => qc.setQueryData(['notif-prefs'], updated),
+    onError:    () => toast.error('Failed to save preference'),
   });
 
   const unsubMutation = useMutation({
@@ -303,63 +305,48 @@ function SectionNotifications() {
   const toggle = (key) => {
     const next = { ...prefs, [key]: !prefs[key] };
     updateMutation.mutate({ [key]: !prefs[key] });
-    qc.setQueryData(['notif-prefs'], next); // optimistic
+    qc.setQueryData(['notif-prefs'], next);
   };
 
   const EMAIL_ITEMS = [
-    {
-      key: 'swapUpdates',
-      label: 'Swap & escrow emails',
-      desc: 'Proposals, acceptances, escrow deposits, confirmations, disputes, and wallet top-ups',
-    },
-    {
-      key: 'dailyDigest',
-      label: 'Daily digest (07:00 / 13:00 / 21:00)',
-      desc: 'Morning, afternoon and night summaries with your pending actions and swap stats',
-    },
-    {
-      key: 'marketing',
-      label: 'Tips & promotions',
-      desc: 'Product updates, swap tips and feature releases',
-    },
+    { key: 'swapUpdates', label: 'Swap & escrow emails',          desc: 'Proposals, acceptances, escrow deposits and confirmations' },
+    { key: 'dailyDigest', label: 'Daily digest',                  desc: 'Morning, afternoon and night summaries of your activity' },
+    { key: 'marketing',   label: 'Tips & promotions',             desc: 'Product updates, swap tips and feature releases' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Email Notifications</h2>
-        <p className="text-sm text-gray-500">
-          Control which emails SwapNaija sends to{' '}
-          <span className="font-medium text-ink">{user?.email || 'your registered email'}</span>
-        </p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader
+        title="Email Notifications"
+        desc={`Emails sent to ${user?.email || 'your registered email'}`}
+      />
 
       {!user?.email && (
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
           <Bell size={16} className="text-amber-600 flex-none mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-800">No email address on file</p>
+            <p className="text-sm font-semibold text-amber-800">No email address on file</p>
             <p className="text-xs text-amber-700 mt-0.5">
               Add an email in your profile to receive notifications.{' '}
-              <Link to="/profile/edit" className="underline">Edit profile →</Link>
+              <Link to="/profile/edit" className="underline font-medium">Edit profile →</Link>
             </p>
           </div>
         </div>
       )}
 
-      <div className="card divide-y divide-gray-100 !p-0 overflow-hidden">
+      <div className="bg-white border border-gray-100 rounded-2xl overflow-hidden divide-y divide-gray-50">
         {EMAIL_ITEMS.map(({ key, label, desc }) => (
           <div key={key} className="flex items-center justify-between px-5 py-4">
-            <div className="flex-1 min-w-0 pr-4">
-              <p className="text-sm font-medium text-ink">{label}</p>
+            <div className="flex-1 min-w-0 pr-6">
+              <p className="text-sm font-medium text-gray-800">{label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
             </div>
             <button
               disabled={isLoading || updateMutation.isPending}
               onClick={() => toggle(key)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-none ${
+              className={`relative inline-flex h-6 w-11 flex-none items-center rounded-full transition-colors disabled:opacity-50 ${
                 prefs?.[key] ? 'bg-primary' : 'bg-gray-200'
-              } disabled:opacity-50`}
+              }`}
             >
               <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
                 prefs?.[key] ? 'translate-x-6' : 'translate-x-1'
@@ -369,10 +356,8 @@ function SectionNotifications() {
         ))}
       </div>
 
-      <div className="flex items-center justify-between pt-1">
-        <p className="text-xs text-gray-400">
-          Preferences are synced to your account across devices.
-        </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-gray-400">Preferences sync across all your devices.</p>
         <button
           onClick={() => unsubMutation.mutate()}
           disabled={unsubMutation.isPending}
@@ -388,41 +373,49 @@ function SectionNotifications() {
 // ─── Section: Wallet ──────────────────────────────────────────────────────────
 function SectionWallet({ user }) {
   const navigate = useNavigate();
-  const walletBal = user?.walletBalance ?? 0;
+  const { user: me } = useAuthStore();
+  // Public profile doesn't include wallet fields — read from auth store instead
+  const walletBal = me?.walletBalance ?? 0;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Wallet</h2>
-        <p className="text-sm text-gray-500">Your SwapNaija balance and spending</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader title="Wallet" desc="Your SwapNaija balance" />
 
-      <div className="bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-6 text-white">
-        <p className="text-sm font-medium opacity-75 mb-2">Available balance</p>
+      {/* Balance hero */}
+      <div className="relative bg-[#0c0c0f] rounded-2xl p-6 text-white overflow-hidden">
+        <div className="pointer-events-none absolute -top-10 -left-10 w-60 h-60 bg-primary/20 rounded-full blur-3xl" />
+        <p className="text-xs font-medium tracking-widest uppercase text-white/40 mb-2">Available Balance</p>
         <p className="text-4xl font-display font-bold tracking-tight">
           ₦{(walletBal / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
         </p>
+        <p className="text-xs text-white/30 mt-1">Barter Credits · 1 BC = ₦1</p>
         <div className="grid grid-cols-2 gap-3 mt-5">
-          <div className="bg-white/10 rounded-2xl py-3 text-center">
-            <p className="text-xs opacity-60">Swap Credits</p>
-            <p className="font-bold">₦{(user?.swapCredits || 0).toLocaleString()}</p>
+          <div className="bg-white/8 rounded-xl py-3 text-center">
+            <p className="text-xs text-white/40">Swap Credits</p>
+            <p className="font-bold text-sm mt-0.5">₦{(me?.swapCredits || 0).toLocaleString()}</p>
           </div>
-          <div className="bg-white/10 rounded-2xl py-3 text-center">
-            <p className="text-xs opacity-60">Total Swaps</p>
-            <p className="font-bold">{user?.swapCount || 0}</p>
+          <div className="bg-white/8 rounded-xl py-3 text-center">
+            <p className="text-xs text-white/40">Total Swaps</p>
+            <p className="font-bold text-sm mt-0.5">{me?.swapCount || 0}</p>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <button onClick={() => navigate('/wallet')} className="card flex flex-col items-center gap-2 py-4 hover:border-primary border border-transparent transition">
-          <Plus size={20} className="text-primary" />
-          <p className="font-semibold text-sm">Top Up</p>
+        <button onClick={() => navigate('/wallet')}
+          className="bg-white border border-gray-100 hover:border-primary/40 hover:bg-primary/3 rounded-2xl flex flex-col items-center gap-2 py-5 transition">
+          <div className="w-10 h-10 bg-primary/8 rounded-xl flex items-center justify-center">
+            <Plus size={18} className="text-primary" />
+          </div>
+          <p className="font-semibold text-sm text-gray-800">Top Up</p>
           <p className="text-xs text-gray-400">Add funds via Paystack</p>
         </button>
-        <button onClick={() => navigate('/wallet')} className="card flex flex-col items-center gap-2 py-4 hover:border-primary border border-transparent transition">
-          <WalletIcon size={20} className="text-gray-500" />
-          <p className="font-semibold text-sm">Transactions</p>
+        <button onClick={() => navigate('/wallet')}
+          className="bg-white border border-gray-100 hover:border-gray-300 rounded-2xl flex flex-col items-center gap-2 py-5 transition">
+          <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center">
+            <WalletIcon size={18} className="text-gray-500" />
+          </div>
+          <p className="font-semibold text-sm text-gray-800">Transactions</p>
           <p className="text-xs text-gray-400">View history</p>
         </button>
       </div>
@@ -432,8 +425,10 @@ function SectionWallet({ user }) {
 
 // ─── Section: Referrals ───────────────────────────────────────────────────────
 function SectionReferrals({ user }) {
+  const { user: me } = useAuthStore();
   const [copied, setCopied] = useState(false);
-  const code = user?.referralCode || '—';
+  // Public profile omits referralCode — use auth store
+  const code = me?.referralCode || '—';
   const link = `${window.location.origin}/onboarding?ref=${code}`;
 
   const copyCode = () => {
@@ -450,30 +445,30 @@ function SectionReferrals({ user }) {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Invite & Earn</h2>
-        <p className="text-sm text-gray-500">Share your code and earn ₦200 swap credits per invite</p>
-      </div>
+    <div className="space-y-5">
+      <SectionHeader title="Invite & Earn" desc="Share your code and earn ₦200 swap credits per invite" />
 
-      <div className="bg-gradient-to-br from-purple-600 to-indigo-600 rounded-3xl p-6 text-white">
+      {/* Stats hero */}
+      <div className="bg-gradient-to-br from-violet-600 to-indigo-600 rounded-2xl p-6 text-white">
         <div className="grid grid-cols-2 gap-3">
-          <div className="bg-white/15 rounded-2xl p-3 text-center">
-            <p className="text-xs opacity-70">You earn per invite</p>
-            <p className="text-2xl font-display font-bold">₦200</p>
+          <div className="bg-white/15 rounded-xl p-4 text-center">
+            <p className="text-xs text-white/60 mb-1">You earn per invite</p>
+            <p className="text-3xl font-display font-bold">₦200</p>
           </div>
-          <div className="bg-white/15 rounded-2xl p-3 text-center">
-            <p className="text-xs opacity-70">Total invites</p>
-            <p className="text-2xl font-display font-bold">{user?.referralCount || 0}</p>
+          <div className="bg-white/15 rounded-xl p-4 text-center">
+            <p className="text-xs text-white/60 mb-1">Total invites</p>
+            <p className="text-3xl font-display font-bold">{me?.referralCount || 0}</p>
           </div>
         </div>
       </div>
 
-      <div className="card space-y-3">
+      {/* Code card */}
+      <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">Your referral code</p>
-        <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-300">
-          <span className="flex-1 font-mono text-xl font-bold text-ink tracking-widest">{code}</span>
-          <button onClick={copyCode} className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition">
+        <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-300">
+          <span className="flex-1 font-mono text-2xl font-bold text-gray-900 tracking-widest">{code}</span>
+          <button onClick={copyCode}
+            className="p-2 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition">
             {copied ? <CheckCheck size={18} /> : <Copy size={18} />}
           </button>
         </div>
@@ -507,12 +502,12 @@ export default function Profile() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['public-profile', targetId],
-    queryFn: () => getPublicProfile(targetId),
+    queryFn:  () => getPublicProfile(targetId),
     enabled: !!targetId,
   });
 
   if (isLoading) return <div className="flex justify-center py-20"><Spinner size="lg" /></div>;
-  if (!data) return <div className="text-center py-20">User not found</div>;
+  if (!data)    return <div className="text-center py-20">User not found</div>;
 
   const { user, listings, reviews } = data;
 
@@ -602,12 +597,12 @@ export default function Profile() {
                     </div>
                   </div>
                 </div>
-                <div className="flex gap-0 mt-5 -mx-8 border-t border-gray-100 px-8 pt-4">
+                <div className="flex mt-5 -mx-8 border-t border-gray-100 px-8 pt-4">
                   {[
-                    { label: 'Swaps', value: user.swapCount || 0 },
-                    { label: 'Rating', value: user.ratingAvg?.toFixed(1) || '—' },
-                    { label: 'Listings', value: listings?.length || 0 },
-                    { label: 'Reviews', value: reviews?.length || 0 },
+                    { label: 'Swaps',    value: user.swapCount   || 0 },
+                    { label: 'Rating',   value: user.ratingAvg?.toFixed(1) || '—' },
+                    { label: 'Listings', value: listings?.length  || 0 },
+                    { label: 'Reviews',  value: reviews?.length   || 0 },
                   ].map(({ label, value }) => (
                     <div key={label} className="flex-1 text-center border-r border-gray-100 last:border-r-0">
                       <p className="text-xl font-display font-bold text-ink">{value}</p>
@@ -620,7 +615,7 @@ export default function Profile() {
             <div className="flex gap-1 mb-6 border-b border-gray-200">
               {[
                 { key: 'listings', label: `Listings (${listings?.length || 0})` },
-                { key: 'reviews',  label: `Reviews (${reviews?.length || 0})` },
+                { key: 'reviews',  label: `Reviews (${reviews?.length  || 0})` },
               ].map(({ key, label }) => (
                 <button key={key} onClick={() => setActiveTab(key)}
                   className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition ${activeTab === key ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-ink'}`}>
@@ -668,119 +663,123 @@ export default function Profile() {
   };
 
   return (
-    <div className="bg-bg min-h-screen">
-      <TopBar title="Profile" rightAction={
-        <Link to="/profile/edit" className="p-2 rounded-full hover:bg-gray-100">
-          <Edit size={20} />
-        </Link>
-      } />
+    <div className="bg-bg min-h-screen lg:min-h-0">
+      {/* Mobile TopBar */}
+      <div className="lg:hidden">
+        <TopBar title="Settings" rightAction={
+          <Link to="/profile/edit" className="p-2 rounded-full hover:bg-gray-100">
+            <Edit size={20} />
+          </Link>
+        } />
 
-      {/* ── Mobile settings list ── */}
-      <div className="lg:hidden max-w-md mx-auto px-4 py-4 space-y-1">
-        {/* User header */}
-        <div className="flex items-center gap-4 px-1 py-4 mb-2">
-          <Avatar src={user.avatarUrl} name={user.fullName} size="xl" />
-          <div>
-            <p className="font-display font-bold text-lg text-ink">{user.fullName}</p>
-            {user.username && <p className="text-sm text-gray-500">@{user.username}</p>}
-            <TrustBadge verification={user.verification} />
-          </div>
-        </div>
-
-        {/* My Listings preview */}
-        <div className="mb-4">
-          <div className="flex items-center justify-between mb-2 px-1">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
-            <Link to="/create-listing" className="text-xs text-primary font-medium flex items-center gap-1">
-              <Plus size={12} /> New
-            </Link>
-          </div>
-          {listings?.length > 0 ? (
+        <div className="max-w-md mx-auto px-4 py-4 space-y-1">
+          {/* User header */}
+          <div className="flex items-center gap-4 px-1 py-3 mb-3">
+            <Avatar src={user.avatarUrl} name={user.fullName} size="xl" />
             <div>
-              <ListingGrid listings={listings.slice(0, 4)} />
-              {listings.length > 4 && (
-                <button
-                  onClick={() => setActiveSection('listings')}
-                  className="w-full mt-2 text-xs text-primary font-medium text-center py-2 bg-primary/5 rounded-xl"
-                >
-                  View all {listings.length} listings →
-                </button>
-              )}
-            </div>
-          ) : (
-            <Link to="/create-listing" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
-              <span className="text-sm text-gray-500">No listings yet — create your first</span>
-              <ChevronRight size={15} className="text-gray-300" />
-            </Link>
-          )}
-        </div>
-
-        {groups.map(group => (
-          <div key={group} className="mb-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 px-1 mb-1">{group}</p>
-            <div className="card !p-0 overflow-hidden divide-y divide-gray-100">
-              {NAV.filter(n => n.group === group && n.id !== 'listings').map(({ id, label, icon: Icon }) => (
-                <Link key={id}
-                  to={id === 'wallet' ? '/wallet' : id === 'referrals' ? '/invite' : id === 'verification' ? '/verify-account' : id === 'security' ? '/change-password' : '/profile/edit'}
-                  className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition"
-                >
-                  <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-none">
-                    <Icon size={16} className="text-gray-500" />
-                  </div>
-                  <span className="flex-1 text-sm font-medium text-ink">{label}</span>
-                  <ChevronRight size={16} className="text-gray-300" />
-                </Link>
-              ))}
-            </div>
-          </div>
-        ))}
-
-        {/* Logout & delete */}
-        <div className="card !p-0 overflow-hidden divide-y divide-gray-100 mt-4">
-          <button onClick={logout} className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-gray-50 transition">
-            <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-none">
-              <LogOut size={16} className="text-gray-500" />
-            </div>
-            <span className="text-sm font-medium text-ink">Log Out</span>
-          </button>
-          <button onClick={() => setShowDeleteModal(true)} className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-gray-50 transition">
-            <div className="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-none">
-              <Trash2 size={16} className="text-red-500" />
-            </div>
-            <span className="text-sm font-medium text-red-500">Delete Account</span>
-          </button>
-        </div>
-      </div>
-
-      {/* ── Desktop settings layout ── */}
-      <div className="hidden lg:flex lg:max-w-5xl lg:mx-auto lg:px-8 lg:py-10 lg:gap-8 lg:min-h-[calc(100vh-40px)]">
-
-        {/* Left nav sidebar */}
-        <aside className="w-64 flex-none sticky top-8 self-start">
-          {/* User card */}
-          <div className="flex items-center gap-3 mb-6 p-1">
-            <Avatar src={user.avatarUrl} name={user.fullName} size="lg" />
-            <div className="min-w-0">
-              <p className="font-semibold text-sm text-ink truncate">{user.fullName}</p>
-              {user.username && <p className="text-xs text-gray-400">@{user.username}</p>}
+              <p className="font-display font-bold text-lg text-ink">{user.fullName}</p>
+              {user.username && <p className="text-sm text-gray-400">@{user.username}</p>}
               <TrustBadge verification={user.verification} />
             </div>
           </div>
 
-          {/* Nav groups */}
-          <nav className="space-y-5">
+          {/* Quick listings preview */}
+          <div className="mb-4">
+            <div className="flex items-center justify-between mb-2 px-1">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
+              <Link to="/create-listing" className="text-xs text-primary font-medium flex items-center gap-1">
+                <Plus size={12} /> New
+              </Link>
+            </div>
+            {listings?.length > 0 ? (
+              <div>
+                <ListingGrid listings={listings.slice(0, 4)} />
+                {listings.length > 4 && (
+                  <button onClick={() => setActiveSection('listings')}
+                    className="w-full mt-2 text-xs text-primary font-medium text-center py-2 bg-primary/5 rounded-xl">
+                    View all {listings.length} listings →
+                  </button>
+                )}
+              </div>
+            ) : (
+              <Link to="/create-listing" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
+                <span className="text-sm text-gray-500">No listings yet — create your first</span>
+                <ChevronRight size={15} className="text-gray-300" />
+              </Link>
+            )}
+          </div>
+
+          {groups.map(group => (
+            <div key={group} className="mb-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 px-1 mb-1">{group}</p>
+              <div className="card !p-0 overflow-hidden divide-y divide-gray-100">
+                {NAV.filter(n => n.group === group && n.id !== 'listings').map(({ id, label, icon: Icon }) => (
+                  <Link key={id}
+                    to={id === 'wallet' ? '/wallet' : id === 'referrals' ? '/invite' : id === 'verification' ? '/verify-account' : id === 'security' ? '/change-password' : '/profile/edit'}
+                    className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition"
+                  >
+                    <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-none">
+                      <Icon size={16} className="text-gray-500" />
+                    </div>
+                    <span className="flex-1 text-sm font-medium text-ink">{label}</span>
+                    <ChevronRight size={16} className="text-gray-300" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <div className="card !p-0 overflow-hidden divide-y divide-gray-100 mt-4">
+            <button onClick={logout} className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-gray-50 transition">
+              <div className="w-8 h-8 bg-gray-100 rounded-xl flex items-center justify-center flex-none">
+                <LogOut size={16} className="text-gray-500" />
+              </div>
+              <span className="text-sm font-medium text-ink">Log Out</span>
+            </button>
+            <button onClick={() => setShowDeleteModal(true)} className="flex items-center gap-3 px-4 py-3.5 w-full hover:bg-gray-50 transition">
+              <div className="w-8 h-8 bg-red-50 rounded-xl flex items-center justify-center flex-none">
+                <Trash2 size={16} className="text-red-500" />
+              </div>
+              <span className="text-sm font-medium text-red-500">Delete Account</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop settings layout ── */}
+      <div className="hidden lg:flex h-screen">
+
+        {/* Left sidebar */}
+        <aside className="w-[260px] flex-none bg-white border-r border-gray-100 flex flex-col overflow-y-auto">
+
+          {/* User card */}
+          <div className="px-5 pt-7 pb-5 border-b border-gray-100">
+            <div className="flex items-center gap-3 mb-1">
+              <Avatar src={user.avatarUrl} name={user.fullName} size="md" />
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold text-sm text-gray-900 truncate">{user.fullName}</p>
+                {user.username && <p className="text-xs text-gray-400 truncate">@{user.username}</p>}
+              </div>
+            </div>
+            <div className="mt-2">
+              <TrustBadge verification={user.verification} />
+            </div>
+          </div>
+
+          {/* Nav */}
+          <nav className="flex-1 px-3 py-4 space-y-5">
             {groups.map(group => (
               <div key={group}>
-                <p className="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-3 mb-1">{group}</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 px-2 mb-1">{group}</p>
                 <div className="space-y-0.5">
                   {NAV.filter(n => n.group === group).map(({ id, label, icon: Icon }) => (
                     <button
                       key={id}
                       onClick={() => setActiveSection(id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all text-left ${
                         activeSection === id
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-gray-500 hover:bg-gray-100 hover:text-ink'
+                          ? 'bg-primary/8 text-primary'
+                          : 'text-gray-500 hover:bg-gray-50 hover:text-gray-800'
                       }`}
                     >
                       <Icon size={16} strokeWidth={activeSection === id ? 2.5 : 1.8} />
@@ -790,29 +789,30 @@ export default function Profile() {
                 </div>
               </div>
             ))}
-
-            {/* Danger */}
-            <div className="pt-2 border-t border-gray-100 space-y-0.5">
-              <button onClick={logout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-ink transition">
-                <LogOut size={16} strokeWidth={1.8} />
-                Log Out
-              </button>
-              <button onClick={() => setShowDeleteModal(true)}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition">
-                <Trash2 size={16} strokeWidth={1.8} />
-                Delete Account
-              </button>
-            </div>
           </nav>
+
+          {/* Bottom actions */}
+          <div className="px-3 pb-4 border-t border-gray-100 pt-3 space-y-0.5">
+            <button onClick={logout}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-800 transition">
+              <LogOut size={16} strokeWidth={1.8} />
+              Log Out
+            </button>
+            <button onClick={() => setShowDeleteModal(true)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-50 hover:text-red-600 transition">
+              <Trash2 size={16} strokeWidth={1.8} />
+              Delete Account
+            </button>
+          </div>
         </aside>
 
-        {/* Right content panel */}
-        <main className="flex-1 min-w-0">
-          <div className="bg-white rounded-3xl shadow-card p-8 min-h-[500px]">
+        {/* Right content area */}
+        <main className="flex-1 bg-[#f7f8fa] overflow-y-auto">
+          <div className="max-w-2xl mx-auto px-8 py-8">
             {renderSection()}
           </div>
         </main>
+
       </div>
 
       {deleteModal}

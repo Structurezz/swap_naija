@@ -1,6 +1,8 @@
 import { Outlet } from 'react-router-dom';
+import { useState } from 'react';
 import BottomNav from './BottomNav';
 import DesktopSidebar from './DesktopSidebar';
+import MobileMenuDrawer from './MobileMenuDrawer';
 import { useSocket, getSocket } from '../../hooks/useSocket';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useChatStore } from '../../store/chat.store';
@@ -13,6 +15,7 @@ function AppShell() {
   const { setConversations } = useChatStore();
   const { refreshUser } = useAuthStore();
   const qc = useQueryClient();
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const { data: convs } = useQuery({
     queryKey: ['conversations'],
@@ -57,8 +60,9 @@ function AppShell() {
         <main className="flex-1 pb-20 lg:pb-0">
           <Outlet />
         </main>
-        <BottomNav />
+        <BottomNav onMenuOpen={() => setMenuOpen(true)} />
       </div>
+      <MobileMenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
     </div>
   );
 }

@@ -1,16 +1,15 @@
 import { NavLink } from 'react-router-dom';
-import { Home, Search, PlusCircle, MessageCircle, User } from 'lucide-react';
+import { Home, Search, PlusCircle, MessageCircle, LayoutGrid } from 'lucide-react';
 import { useChatStore } from '../../store/chat.store';
 
 const navItems = [
-  { to: '/', icon: Home, label: 'Home', exact: true },
-  { to: '/search', icon: Search, label: 'Search' },
-  { to: '/create', icon: PlusCircle, label: 'List', accent: true },
-  { to: '/chat', icon: MessageCircle, label: 'Chat', badge: 'chat' },
-  { to: '/profile', icon: User, label: 'Profile' },
+  { to: '/',       icon: Home,          label: 'Home',    exact: true },
+  { to: '/search', icon: Search,        label: 'Search' },
+  { to: '/create', icon: PlusCircle,    label: 'List',    accent: true },
+  { to: '/chat',   icon: MessageCircle, label: 'Chat',    badge: 'chat' },
 ];
 
-function BottomNav() {
+function BottomNav({ onMenuOpen }) {
   const { conversations } = useChatStore();
   const totalUnread = conversations.reduce((sum, c) => sum + (c.unread || 0), 0);
 
@@ -24,18 +23,14 @@ function BottomNav() {
             end={exact}
             className={({ isActive }) =>
               `flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all ${
-                isActive
-                  ? accent
-                    ? 'text-primary'
-                    : 'text-primary'
-                  : 'text-gray-400'
+                isActive ? 'text-primary' : 'text-gray-400'
               }`
             }
           >
             {({ isActive }) => (
               <>
                 <div className={`relative ${accent ? 'bg-primary text-white p-2.5 rounded-2xl -mt-5 shadow-lg' : ''}`}>
-                  <Icon size={accent ? 22 : 22} strokeWidth={isActive ? 2.5 : 1.8} />
+                  <Icon size={22} strokeWidth={isActive ? 2.5 : 1.8} />
                   {badge === 'chat' && totalUnread > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                       {totalUnread > 9 ? '9+' : totalUnread}
@@ -49,6 +44,15 @@ function BottomNav() {
             )}
           </NavLink>
         ))}
+
+        {/* Menu button */}
+        <button
+          onClick={onMenuOpen}
+          className="flex flex-col items-center gap-0.5 px-3 py-2 rounded-2xl transition-all text-gray-400 active:text-primary"
+        >
+          <LayoutGrid size={22} strokeWidth={1.8} />
+          <span className="text-xs">Menu</span>
+        </button>
       </div>
     </nav>
   );

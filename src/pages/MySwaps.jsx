@@ -343,9 +343,10 @@ export default function MySwaps() {
     keepPreviousData: true,
   });
 
-  const swaps      = swapData?.swaps      ?? [];
-  const total      = swapData?.total      ?? 0;
-  const totalPages = swapData?.totalPages ?? 1;
+  // Support both old (plain array) and new (paginated object) backend responses
+  const swaps      = Array.isArray(swapData) ? swapData          : (swapData?.swaps      ?? []);
+  const total      = Array.isArray(swapData) ? swapData.length   : (swapData?.total      ?? 0);
+  const totalPages = Array.isArray(swapData) ? 1                 : (swapData?.totalPages ?? 1);
 
   const { data: escrowInfo } = useQuery({
     queryKey: ['escrow-info'],

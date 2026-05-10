@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import ScrollToTop from './components/layout/ScrollToTop';
 import { useEffect } from 'react';
 import AppShell from './components/layout/AppShell';
 import ProtectedRoute from './components/layout/ProtectedRoute';
@@ -38,6 +39,7 @@ function App() {
 
       {initialized && (
         <Routes>
+          <Route path="*" element={<ScrollToTop />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route element={<ProtectedRoute />}>

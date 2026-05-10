@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { MapPin, Eye, Repeat2, Zap, LayoutGrid } from 'lucide-react';
+import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield } from 'lucide-react';
 import Badge from '../../ui/Badge';
 import Avatar from '../../ui/Avatar';
 import Button from '../../ui/Button';
@@ -156,6 +156,17 @@ function ListingDetail({ listing, onSwap, currentUserId }) {
             </div>
             <span className="text-primary text-sm font-medium">View Profile →</span>
           </Link>
+        </div>
+      )}
+
+      {/* Swap eligibility notice */}
+      {!isOwner && listing.minSwapValue > 0 && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3">
+          <Shield size={15} className="text-amber-600 flex-none mt-0.5" />
+          <p className="text-xs text-amber-800">
+            <span className="font-semibold">Swap requirement:</span> Your item must be worth at least{' '}
+            <span className="font-bold">{listing.minSwapValue.toLocaleString()} BC</span> to propose a swap.
+          </p>
         </div>
       )}
 

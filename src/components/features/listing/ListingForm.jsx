@@ -10,6 +10,7 @@ const schema = z.object({
   listingType: z.enum(['goods', 'services', 'both']),
   condition: z.enum(['new', 'like_new', 'good', 'fair', 'poor']).optional(),
   estimatedValue: z.coerce.number().min(0).optional(),
+  minSwapValue: z.coerce.number().min(0).optional(),
   wantsTitle: z.string().optional(),
   wantsDescription: z.string().optional(),
   locationState: z.string().optional(),
@@ -75,13 +76,25 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
       )}
 
       <Input
-        label="Estimated Value (₦)"
+        label="Estimated Value (BC)"
         type="number"
         placeholder="e.g. 50000"
-        prefix="₦"
+        prefix="BC"
         error={errors.estimatedValue?.message}
         {...register('estimatedValue')}
       />
+
+      <div>
+        <Input
+          label="Minimum Swap Value (BC)"
+          type="number"
+          placeholder="Leave blank — no restriction"
+          prefix="BC"
+          error={errors.minSwapValue?.message}
+          {...register('minSwapValue')}
+        />
+        <p className="text-xs text-gray-400 mt-1">Only proposers whose item is worth at least this much can swap with you</p>
+      </div>
 
       <div className="border-t pt-4">
         <h3 className="font-semibold text-sm mb-3 text-gray-600">What do you want in return?</h3>

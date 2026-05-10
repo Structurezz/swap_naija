@@ -1,6 +1,6 @@
 import client from './client';
 
-export const getMySwaps      = (status) => client.get('/swaps', { params: { status } }).then(r => r.data.data);
+export const getMySwaps      = (status, page = 1, limit = 20) => client.get('/swaps', { params: { status, page, limit } }).then(r => r.data.data);
 export const getSwap         = (id)     => client.get(`/swaps/${id}`).then(r => r.data.data);
 export const getEscrowInfo   = ()       => client.get('/swaps/escrow-info').then(r => r.data.data);
 export const proposeSwap     = (data)   => client.post('/swaps', data).then(r => r.data.data);

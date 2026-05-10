@@ -28,12 +28,45 @@ import { formatDistanceToNow } from 'date-fns';
 // ─── Settings sections ────────────────────────────────────────────────────────
 const NAV = [
   { id: 'profile',       label: 'Profile',        icon: User,        group: 'Account' },
+  { id: 'listings',      label: 'My Listings',     icon: LayoutGrid,  group: 'Account' },
   { id: 'security',      label: 'Security',        icon: KeyRound,    group: 'Account' },
   { id: 'verification',  label: 'Verification',    icon: ShieldCheck, group: 'Account' },
   { id: 'notifications', label: 'Notifications',   icon: Bell,        group: 'Preferences' },
   { id: 'wallet',        label: 'Wallet',          icon: WalletIcon,  group: 'Finances' },
   { id: 'referrals',     label: 'Invite & Earn',   icon: Gift,        group: 'Finances' },
 ];
+
+// ─── Section: My Listings ─────────────────────────────────────────────────────
+function SectionListings({ listings }) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-lg font-display font-bold text-ink mb-1">My Listings</h2>
+          <p className="text-sm text-gray-500">{listings?.length || 0} active listing{listings?.length !== 1 ? 's' : ''}</p>
+        </div>
+        <Link to="/create-listing">
+          <Button size="sm"><Plus size={14} /> New Listing</Button>
+        </Link>
+      </div>
+
+      {listings?.length > 0 ? (
+        <ListingGrid listings={listings} />
+      ) : (
+        <div className="text-center py-14 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <LayoutGrid size={24} className="text-gray-300" />
+          </div>
+          <p className="font-medium text-gray-500 mb-1">No listings yet</p>
+          <p className="text-sm text-gray-400 mb-4">List something you want to swap</p>
+          <Link to="/create-listing">
+            <Button size="sm"><Plus size={14} /> Create Listing</Button>
+          </Link>
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ─── Section: Profile ─────────────────────────────────────────────────────────
 function SectionProfile({ user }) {
@@ -562,6 +595,7 @@ export default function Profile() {
   const renderSection = () => {
     switch (activeSection) {
       case 'profile':       return <SectionProfile user={user} />;
+      case 'listings':      return <SectionListings listings={listings} />;
       case 'security':      return <SectionSecurity />;
       case 'verification':  return <SectionVerification user={user} />;
       case 'notifications': return <SectionNotifications />;
@@ -591,11 +625,39 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* My Listings preview */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2 px-1">
+            <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
+            <Link to="/create-listing" className="text-xs text-primary font-medium flex items-center gap-1">
+              <Plus size={12} /> New
+            </Link>
+          </div>
+          {listings?.length > 0 ? (
+            <div>
+              <ListingGrid listings={listings.slice(0, 4)} />
+              {listings.length > 4 && (
+                <button
+                  onClick={() => setActiveSection('listings')}
+                  className="w-full mt-2 text-xs text-primary font-medium text-center py-2 bg-primary/5 rounded-xl"
+                >
+                  View all {listings.length} listings →
+                </button>
+              )}
+            </div>
+          ) : (
+            <Link to="/create-listing" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
+              <span className="text-sm text-gray-500">No listings yet — create your first</span>
+              <ChevronRight size={15} className="text-gray-300" />
+            </Link>
+          )}
+        </div>
+
         {groups.map(group => (
           <div key={group} className="mb-4">
             <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 px-1 mb-1">{group}</p>
             <div className="card !p-0 overflow-hidden divide-y divide-gray-100">
-              {NAV.filter(n => n.group === group).map(({ id, label, icon: Icon }) => (
+              {NAV.filter(n => n.group === group && n.id !== 'listings').map(({ id, label, icon: Icon }) => (
                 <Link key={id}
                   to={id === 'wallet' ? '/wallet' : id === 'referrals' ? '/invite' : id === 'verification' ? '/verify-account' : id === 'security' ? '/change-password' : '/profile/edit'}
                   className="flex items-center gap-3 px-4 py-3.5 hover:bg-gray-50 transition"

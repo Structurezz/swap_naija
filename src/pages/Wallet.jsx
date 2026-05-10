@@ -190,17 +190,20 @@ export default function Wallet() {
   ) : (
     <div className="space-y-2">
       {data.payments.map(p => {
-        const meta = TYPE_META[p.paymentType] || { label: p.paymentType, color: 'text-gray-600', sign: '-', icon: WalletIcon };
-        const Icon = meta.icon;
-        const isCredit = p.paymentType === 'topup';
+        const isRefund = p.status === 'refunded';
+        const isCredit = p.paymentType === 'topup' || isRefund;
+        const baseMeta = TYPE_META[p.paymentType] || { label: p.paymentType, color: 'text-gray-600', icon: WalletIcon };
+        const label = p.paymentType === 'escrow' && isRefund ? 'Escrow Refund' : baseMeta.label;
+        const Icon  = baseMeta.icon;
+        const sign  = isCredit ? '+' : '-';
         return (
           <div key={p.id} className="card flex items-center gap-3">
             <div className={`w-9 h-9 rounded-xl flex items-center justify-center flex-none ${isCredit ? 'bg-green-50' : 'bg-gray-50'}`}>
-              <Icon size={16} className={meta.color} />
+              <Icon size={16} className={isCredit ? 'text-green-600' : baseMeta.color} />
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm">
-                {meta.label}
+                {label}
                 {p.listingId?.title && <span className="text-gray-400 font-normal"> · {p.listingId.title}</span>}
               </p>
               <p className="text-xs text-gray-400">
@@ -209,7 +212,7 @@ export default function Wallet() {
             </div>
             <div className="text-right flex-none">
               <p className={`font-bold text-sm ${isCredit ? 'text-green-600' : 'text-gray-700'}`}>
-                {meta.sign}{formatBC(p.amountKobo)}
+                {sign}{formatBC(p.amountKobo)}
               </p>
               <Badge variant={STATUS_VARIANTS[p.status] || 'default'} size="sm">
                 {p.status}

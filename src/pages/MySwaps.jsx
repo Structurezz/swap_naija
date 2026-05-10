@@ -16,6 +16,7 @@ import Spinner from '../components/ui/Spinner';
 import {
   MapPin, Shield, CheckCircle2, AlertTriangle,
   ShieldCheck, Clock, Info, ArrowLeftRight, Coins,
+  ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 const TABS = [
@@ -35,7 +36,7 @@ const SWAP_TYPE_LABELS = {
 };
 
 // ─── Escrow status panel ──────────────────────────────────────────────────────
-function EscrowPanel({ swap, userId, depositKobo, refundKobo, platformFeeKobo, onPayDeposit, paying }) {
+function EscrowPanel({ swap, userId, onPayDeposit, paying }) {
   const isInitiator = swap.initiatorId?.id === userId;
 
   const myPaid    = isInitiator ? swap.initiatorDepositPaid : swap.receiverDepositPaid;
@@ -44,9 +45,13 @@ function EscrowPanel({ swap, userId, depositKobo, refundKobo, platformFeeKobo, o
     ? swap.receiverId?.fullName  || 'Other party'
     : swap.initiatorId?.fullName || 'Other party';
 
-  const depositBC      = formatBC(depositKobo  || 100000);
-  const refundBC       = formatBC(refundKobo   || 80000);
-  const platformFeeBC  = formatBC(platformFeeKobo || 20000);
+  const depositKobo    = swap.escrowDepositKobo || 100000;
+  const platformFeeKobo = Math.round(depositKobo * 0.02);
+  const refundKobo     = depositKobo - platformFeeKobo;
+
+  const depositBC      = formatBC(depositKobo);
+  const refundBC       = formatBC(refundKobo);
+  const platformFeeBC  = formatBC(platformFeeKobo);
 
   if (swap.status === 'in_escrow') {
     return (
@@ -259,9 +264,6 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <EscrowPanel
           swap={swap}
           userId={user?.id}
-          depositKobo={escrowInfo?.depositKobo || 100000}
-          refundKobo={escrowInfo?.refundKobo || 80000}
-          platformFeeKobo={escrowInfo?.platformFeeKobo || 20000}
           paying={escrowMutation.isPending}
           onPayDeposit={() => escrowMutation.mutate(swap.id)}
         />
@@ -272,9 +274,6 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <EscrowPanel
           swap={swap}
           userId={user?.id}
-          depositKobo={escrowInfo?.depositKobo || 100000}
-          refundKobo={escrowInfo?.refundKobo || 80000}
-          platformFeeKobo={escrowInfo?.platformFeeKobo || 20000}
         />
       )}
 
@@ -298,7 +297,7 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2 flex items-center gap-2">
           <ShieldCheck size={13} className="text-green-600 flex-none" />
           <p className="text-xs text-green-700">
-            Escrow deposit refunded — {formatBC(escrowInfo?.refundKobo || 80000)} returned to your Barter Credits.
+            Escrow deposit refunded — {formatBC(Math.round((swap.escrowDepositKobo || 100000) * 0.98))} returned to your Barter Credits.
           </p>
         </div>
       )}
@@ -330,6 +329,7 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
 export default function MySwaps() {
   const { user, refreshUser } = useAuthStore();
   const [tab, setTab]               = useState('');
+  const [page, setPage]             = useState(1);
   const [selectedSwap, setSelectedSwap] = useState(null);
   const [activeSwap, setActiveSwap] = useState(null);
   const [meetupForm, setMeetupForm] = useState({ location: '', date: '' });
@@ -337,10 +337,15 @@ export default function MySwaps() {
   const [modal, setModal]           = useState(null); // 'meetup' | 'dispute'
   const qc = useQueryClient();
 
-  const { data: swaps, isLoading } = useQuery({
-    queryKey: ['swaps', tab],
-    queryFn: () => getMySwaps(tab || undefined),
+  const { data: swapData, isLoading } = useQuery({
+    queryKey: ['swaps', tab, page],
+    queryFn: () => getMySwaps(tab || undefined, page),
+    keepPreviousData: true,
   });
+
+  const swaps      = swapData?.swaps      ?? [];
+  const total      = swapData?.total      ?? 0;
+  const totalPages = swapData?.totalPages ?? 1;
 
   const { data: escrowInfo } = useQuery({
     queryKey: ['escrow-info'],
@@ -350,7 +355,7 @@ export default function MySwaps() {
 
   // Keep activeSwap in sync whenever the swaps list refreshes after a mutation
   useEffect(() => {
-    if (!activeSwap || !swaps) return;
+    if (!activeSwap || !swaps.length) return;
     const fresh = swaps.find(s => s.id === activeSwap.id);
     if (fresh) setActiveSwap(fresh);
   }, [swaps]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -468,7 +473,7 @@ export default function MySwaps() {
       {TABS.map(t => (
         <button
           key={t.value}
-          onClick={() => { setTab(t.value); setActiveSwap(null); }}
+          onClick={() => { setTab(t.value); setPage(1); setActiveSwap(null); }}
           className={`px-4 py-1.5 rounded-full text-sm font-medium whitespace-nowrap transition ${
             tab === t.value ? 'bg-primary text-white' : 'bg-white text-gray-600 border border-gray-200 hover:border-gray-300'
           }`}
@@ -498,71 +503,145 @@ export default function MySwaps() {
         <div className="flex flex-col items-center justify-center py-24">
           <Spinner size="lg" />
         </div>
-      ) : !swaps?.length ? (
+      ) : !swaps.length ? (
         <div className="text-center py-20 text-gray-400 px-4">
           <p className="text-5xl mb-3">🤝</p>
           <p className="text-base font-medium text-gray-500">No swaps yet</p>
           <p className="text-sm mt-1 text-gray-400">When you propose or receive a swap, it'll show up here.</p>
         </div>
       ) : (
-        <div className="lg:grid lg:grid-cols-[380px_1fr] lg:gap-0 lg:min-h-[calc(100vh-80px)]">
+        <div className="lg:grid lg:grid-cols-[380px_1fr] lg:gap-0 lg:h-[calc(100vh-80px)]">
 
           {/* ── Left panel: swap list ── */}
-          <div className="lg:border-r lg:border-gray-100 lg:overflow-y-auto">
+          <div className="lg:border-r lg:border-gray-100 lg:flex lg:flex-col lg:overflow-hidden">
 
             {/* Mobile: full-detail cards */}
-            <div className="lg:hidden px-4 pb-6 space-y-3">
+            <div className="lg:hidden px-4 pb-4 space-y-3">
               {swaps.map(swap => (
                 <div key={swap.id} className="card space-y-2">
                   <SwapDetail swap={swap} {...sharedDetailProps} isDesktop={false} />
                 </div>
               ))}
+
+              {/* Mobile pagination */}
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between pt-2 pb-4">
+                  <button
+                    onClick={() => { setPage(p => p - 1); window.scrollTo(0, 0); }}
+                    disabled={page === 1}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={15} /> Prev
+                  </button>
+                  <span className="text-xs text-gray-500">
+                    Page {page} of {totalPages} · {total} swaps
+                  </span>
+                  <button
+                    onClick={() => { setPage(p => p + 1); window.scrollTo(0, 0); }}
+                    disabled={page === totalPages}
+                    className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Next <ChevronRight size={15} />
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Desktop: compact clickable rows */}
-            <div className="hidden lg:block">
-              {swaps.map(swap => {
-                const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
-                const isActive = activeSwap?.id === swap.id;
+            <div className="hidden lg:flex lg:flex-col lg:h-full">
+              <div className="flex-1 overflow-y-auto">
+                {swaps.map(swap => {
+                  const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
+                  const isActive = activeSwap?.id === swap.id;
 
-                return (
-                  <button
-                    key={swap.id}
-                    onClick={() => setActiveSwap(isActive ? null : swap)}
-                    className={`w-full text-left px-5 py-4 flex items-start gap-3 transition border-l-2 border-b border-b-gray-50 hover:bg-gray-50/60 ${
-                      isActive
-                        ? 'border-l-primary bg-primary/5'
-                        : 'border-l-transparent'
-                    }`}
-                  >
-                    <div className="flex-1 min-w-0 space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <SwapStatus status={swap.status} />
-                        <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
-                          {swapTypeMeta.icon} {swapTypeMeta.label}
-                        </span>
-                      </div>
-                      <p className="text-sm font-medium text-ink truncate">
-                        {swap.initiatorId?.fullName} ↔ {swap.receiverId?.fullName}
-                      </p>
-                      {swap.meetupLocation && (
-                        <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
-                          <MapPin size={10} className="flex-none" />
-                          {swap.meetupLocation}
+                  return (
+                    <button
+                      key={swap.id}
+                      onClick={() => setActiveSwap(isActive ? null : swap)}
+                      className={`w-full text-left px-5 py-4 flex items-start gap-3 transition border-l-2 border-b border-b-gray-50 hover:bg-gray-50/60 ${
+                        isActive
+                          ? 'border-l-primary bg-primary/5'
+                          : 'border-l-transparent'
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <SwapStatus status={swap.status} />
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                            {swapTypeMeta.icon} {swapTypeMeta.label}
+                          </span>
+                        </div>
+                        <p className="text-sm font-medium text-ink truncate">
+                          {swap.initiatorId?.fullName} ↔ {swap.receiverId?.fullName}
                         </p>
+                        {swap.meetupLocation && (
+                          <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
+                            <MapPin size={10} className="flex-none" />
+                            {swap.meetupLocation}
+                          </p>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-400 flex-none pt-0.5">
+                        {new Date(swap.updatedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Desktop pagination — pinned to bottom of left panel */}
+              {totalPages > 1 && (
+                <div className="flex-none border-t border-gray-100 px-4 py-3 flex items-center justify-between bg-white">
+                  <span className="text-xs text-gray-400">
+                    {((page - 1) * 20) + 1}–{Math.min(page * 20, total)} of {total}
+                  </span>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => { setPage(p => p - 1); setActiveSwap(null); }}
+                      disabled={page === 1}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronLeft size={16} />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                      .reduce((acc, n, i, arr) => {
+                        if (i > 0 && n - arr[i - 1] > 1) acc.push('…');
+                        acc.push(n);
+                        return acc;
+                      }, [])
+                      .map((n, i) =>
+                        n === '…' ? (
+                          <span key={`ellipsis-${i}`} className="px-1 text-xs text-gray-400">…</span>
+                        ) : (
+                          <button
+                            key={n}
+                            onClick={() => { setPage(n); setActiveSwap(null); }}
+                            className={`w-7 h-7 rounded-lg text-xs font-medium transition ${
+                              page === n
+                                ? 'bg-primary text-white'
+                                : 'hover:bg-gray-100 text-gray-600'
+                            }`}
+                          >
+                            {n}
+                          </button>
+                        )
                       )}
-                    </div>
-                    <span className="text-xs text-gray-400 flex-none pt-0.5">
-                      {new Date(swap.updatedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
-                    </span>
-                  </button>
-                );
-              })}
+                    <button
+                      onClick={() => { setPage(p => p + 1); setActiveSwap(null); }}
+                      disabled={page === totalPages}
+                      className="p-1.5 rounded-lg hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition"
+                    >
+                      <ChevronRight size={16} />
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           {/* ── Right panel: swap detail (desktop only) ── */}
-          <div className="hidden lg:block lg:overflow-y-auto lg:p-8">
+          <div className="hidden lg:block lg:overflow-y-auto lg:p-8 lg:h-full">
             {activeSwap ? (
               <div className="max-w-2xl space-y-4">
                 {/* Swap type heading */}

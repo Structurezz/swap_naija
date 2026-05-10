@@ -1,8 +1,12 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useRef, useState, useEffect } from 'react';
+import { ImagePlus, X, Star } from 'lucide-react';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
+
+const MAX_IMAGES = 8;
 
 const schema = z.object({
   title: z.string().min(3, 'Title too short').max(200),
@@ -31,11 +35,132 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
   });
 
   const listingType = watch('listingType');
+  const fileInputRef = useRef(null);
+  const [images, setImages] = useState([]); // [{ file: File, preview: string }]
+
+  // Revoke object URLs on unmount to avoid memory leaks
+  useEffect(() => {
+    return () => images.forEach(img => URL.revokeObjectURL(img.preview));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    const remaining = MAX_IMAGES - images.length;
+    if (remaining <= 0) return;
+    const toAdd = files.slice(0, remaining).map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setImages(prev => [...prev, ...toAdd]);
+    e.target.value = ''; // allow re-selecting the same file
+  };
+
+  const removeImage = (index) => {
+    setImages(prev => {
+      URL.revokeObjectURL(prev[index].preview);
+      return prev.filter((_, i) => i !== index);
+    });
+  };
+
+  // Drag-and-drop
+  const handleDrop = (e) => {
+    e.preventDefault();
+    const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+    const remaining = MAX_IMAGES - images.length;
+    if (!files.length || remaining <= 0) return;
+    const toAdd = files.slice(0, remaining).map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }));
+    setImages(prev => [...prev, ...toAdd]);
+  };
+
+  const handleFormSubmit = (data) => {
+    onSubmit(data, images.map(img => img.file));
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+
+      {/* ── Image Upload ── */}
       <div>
-        <label className="block text-sm font-medium text-ink mb-1">What are you listing?</label>
+        <div className="flex items-center justify-between mb-2">
+          <label className="text-sm font-semibold text-ink">Photos</label>
+          <span className={`text-xs font-medium ${images.length >= MAX_IMAGES ? 'text-primary' : 'text-gray-400'}`}>
+            {images.length}/{MAX_IMAGES}
+          </span>
+        </div>
+
+        <div
+          className="grid grid-cols-4 gap-2"
+          onDragOver={e => e.preventDefault()}
+          onDrop={handleDrop}
+        >
+          {/* Filled slots */}
+          {images.map((img, i) => (
+            <div key={img.preview} className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 group">
+              <img
+                src={img.preview}
+                alt={`preview-${i}`}
+                className="w-full h-full object-cover"
+              />
+              {/* Cover badge */}
+              {i === 0 && (
+                <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 bg-black/60 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
+                  <Star size={8} fill="currentColor" />
+                  Cover
+                </div>
+              )}
+              {/* Remove button */}
+              <button
+                type="button"
+                onClick={() => removeImage(i)}
+                className="absolute top-1.5 right-1.5 w-6 h-6 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition opacity-0 group-hover:opacity-100"
+              >
+                <X size={11} />
+              </button>
+            </div>
+          ))}
+
+          {/* Add slot */}
+          {images.length < MAX_IMAGES && (
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition
+                ${images.length === 0
+                  ? 'col-span-2 row-span-2 border-gray-200 hover:border-primary hover:bg-primary/3'
+                  : 'border-gray-200 hover:border-primary hover:bg-primary/3'
+                }`}
+            >
+              <ImagePlus size={images.length === 0 ? 28 : 20} className="text-gray-300" />
+              {images.length === 0 && (
+                <>
+                  <p className="text-sm font-medium text-gray-400">Add photos</p>
+                  <p className="text-xs text-gray-300">Up to 8 · 5 MB each</p>
+                </>
+              )}
+            </button>
+          )}
+        </div>
+
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          className="hidden"
+          onChange={handleFileChange}
+        />
+
+        <p className="text-xs text-gray-400 mt-2">
+          First photo is the cover · JPG, PNG or WebP · Max 5 MB each
+        </p>
+      </div>
+
+      {/* ── Listing type ── */}
+      <div>
+        <label className="block text-sm font-semibold text-ink mb-1">What are you listing?</label>
         <select {...register('listingType')} className="input-field">
           <option value="goods">Physical Item (Goods)</option>
           <option value="services">Service / Skill</option>
@@ -51,7 +176,7 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
       />
 
       <div>
-        <label className="block text-sm font-medium text-ink mb-1">Description</label>
+        <label className="block text-sm font-semibold text-ink mb-1">Description</label>
         <textarea
           {...register('description')}
           placeholder="Describe your item or service in detail..."
@@ -63,7 +188,7 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
 
       {listingType !== 'services' && (
         <div>
-          <label className="block text-sm font-medium text-ink mb-1">Condition</label>
+          <label className="block text-sm font-semibold text-ink mb-1">Condition</label>
           <select {...register('condition')} className="input-field">
             <option value="">Select condition</option>
             <option value="new">New</option>
@@ -104,7 +229,7 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
           {...register('wantsTitle')}
         />
         <div className="mt-3">
-          <label className="block text-sm font-medium text-ink mb-1">More details (optional)</label>
+          <label className="block text-sm font-semibold text-ink mb-1">More details (optional)</label>
           <textarea
             {...register('wantsDescription')}
             placeholder="Describe what you're looking to receive..."
@@ -115,12 +240,12 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink mb-1">State</label>
+        <label className="block text-sm font-semibold text-ink mb-1">State</label>
         <Input placeholder="e.g. Lagos" {...register('locationState')} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink mb-1">LGA / Area</label>
+        <label className="block text-sm font-semibold text-ink mb-1">LGA / Area</label>
         <Input placeholder="e.g. Ikeja" {...register('locationLga')} />
       </div>
 

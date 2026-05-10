@@ -1,11 +1,13 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCreateListing } from '../hooks/useListings';
+import { uploadListingImages } from '../api/listings.api';
 import TopBar from '../components/layout/TopBar';
 import ListingForm from '../components/features/listing/ListingForm';
-import { Camera, DollarSign, ArrowLeftRight, Tag, CheckCircle } from 'lucide-react';
+import { Camera, DollarSign, ArrowLeftRight, Tag } from 'lucide-react';
 
 const TIPS = [
-  { icon: Camera, text: 'Add clear photos (up to 5) from multiple angles' },
+  { icon: Camera, text: 'Add up to 8 photos — the first one is your cover shot' },
   { icon: DollarSign, text: 'Set a fair estimated value to attract serious swappers' },
   { icon: ArrowLeftRight, text: 'Write clearly what you\'re looking to swap for' },
   { icon: Tag, text: 'Be specific about the item\'s condition (new, used, etc.)' },
@@ -19,12 +21,23 @@ const HOW_STEPS = [
 
 export default function CreateListing() {
   const navigate = useNavigate();
-  const { mutate, isPending } = useCreateListing();
+  const { mutateAsync, isPending } = useCreateListing();
+  const [uploading, setUploading] = useState(false);
 
-  const handleSubmit = (data) => {
-    mutate(data, {
-      onSuccess: (listing) => navigate(`/listing/${listing.id}`),
-    });
+  const handleSubmit = async (data, images) => {
+    try {
+      const listing = await mutateAsync(data);
+      if (images.length > 0) {
+        setUploading(true);
+        const formData = new FormData();
+        images.forEach(file => formData.append('images', file));
+        await uploadListingImages(listing.id, formData);
+        setUploading(false);
+      }
+      navigate(`/listing/${listing.id}`);
+    } catch {
+      setUploading(false);
+    }
   };
 
   return (
@@ -39,7 +52,7 @@ export default function CreateListing() {
         <div className="lg:grid lg:grid-cols-[1fr_340px] lg:gap-8 lg:items-start">
           {/* Form */}
           <div>
-            <ListingForm onSubmit={handleSubmit} loading={isPending} />
+            <ListingForm onSubmit={handleSubmit} loading={isPending || uploading} />
           </div>
 
           {/* Desktop right panel */}

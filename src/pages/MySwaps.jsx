@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
@@ -348,26 +348,43 @@ export default function MySwaps() {
     staleTime: Infinity,
   });
 
+  // Keep activeSwap in sync whenever the swaps list refreshes after a mutation
+  useEffect(() => {
+    if (!activeSwap || !swaps) return;
+    const fresh = swaps.find(s => s.id === activeSwap.id);
+    if (fresh) setActiveSwap(fresh);
+  }, [swaps]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const invalidate = () => qc.invalidateQueries({ queryKey: ['swaps'] });
 
   const respondMutation = useMutation({
     mutationFn: ({ id, action }) => respondToSwap(id, action),
-    onSuccess: () => { toast.success('Updated!'); invalidate(); },
+    onSuccess: (updatedSwap) => {
+      toast.success('Updated!');
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
+      invalidate();
+    },
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
   });
 
   const meetupMutation = useMutation({
     mutationFn: ({ id, data }) => setMeetup(id, data),
-    onSuccess: () => { toast.success('Meetup set!'); invalidate(); setModal(null); },
+    onSuccess: (updatedSwap) => {
+      toast.success('Meetup set!');
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
+      invalidate();
+      setModal(null);
+    },
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
   });
 
   const escrowMutation = useMutation({
     mutationFn: (id) => payEscrowDeposit(id),
-    onSuccess: (swap) => {
-      toast.success(swap.status === 'in_escrow'
+    onSuccess: (updatedSwap) => {
+      toast.success(updatedSwap.status === 'in_escrow'
         ? '🛡️ Escrow active! Both deposits secured.'
         : 'Deposit paid! Waiting for the other party.');
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
       invalidate();
       qc.invalidateQueries({ queryKey: ['payment-history'] });
       refreshUser();
@@ -384,13 +401,15 @@ export default function MySwaps() {
 
   const confirmMutation = useMutation({
     mutationFn: confirmSwap,
-    onSuccess: (swap) => {
-      if (swap.status === 'completed') {
-        toast.success('🎉 Swap completed! Escrow refund on its way.');
+    onSuccess: (updatedSwap) => {
+      if (updatedSwap.status === 'completed') {
+        toast.success('🎉 Swap completed! Escrow refund added to your Barter Credits.');
+        qc.invalidateQueries({ queryKey: ['payment-history'] });
         refreshUser();
       } else {
         toast.success('Confirmed! Waiting for the other party.');
       }
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
       invalidate();
     },
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
@@ -398,9 +417,11 @@ export default function MySwaps() {
 
   const topUpMutation = useMutation({
     mutationFn: (id) => payTopUp(id),
-    onSuccess: () => {
+    onSuccess: (updatedSwap) => {
       toast.success('Top-up paid! Barter Credits held in escrow.');
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
       invalidate();
+      qc.invalidateQueries({ queryKey: ['payment-history'] });
       refreshUser();
     },
     onError: (e) => {

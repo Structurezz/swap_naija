@@ -511,10 +511,10 @@ export default function MySwaps() {
           <p className="text-sm mt-1 text-gray-400">When you propose or receive a swap, it'll show up here.</p>
         </div>
       ) : (
-        <div className="lg:grid lg:grid-cols-[380px_1fr] lg:gap-0 lg:h-[calc(100vh-80px)]">
+        <div className="lg:grid lg:grid-cols-[380px_1fr] lg:gap-0" style={{ height: 'calc(100vh - 80px)' }}>
 
           {/* ── Left panel: swap list ── */}
-          <div className="lg:border-r lg:border-gray-100 lg:flex lg:flex-col lg:overflow-hidden">
+          <div className="lg:border-r lg:border-gray-100 lg:flex lg:flex-col" style={{ minHeight: 0 }}>
 
             {/* Mobile: full-detail cards */}
             <div className="lg:hidden px-4 pb-4 space-y-3">
@@ -549,8 +549,8 @@ export default function MySwaps() {
             </div>
 
             {/* Desktop: compact clickable rows */}
-            <div className="hidden lg:flex lg:flex-col lg:h-full">
-              <div className="flex-1 overflow-y-auto">
+            <div className="hidden lg:flex lg:flex-col" style={{ flex: 1, minHeight: 0 }}>
+              <div className="overflow-y-auto" style={{ flex: 1, minHeight: 0 }}>
                 {swaps.map(swap => {
                   const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
                   const isActive = activeSwap?.id === swap.id;
@@ -642,7 +642,7 @@ export default function MySwaps() {
           </div>
 
           {/* ── Right panel: swap detail (desktop only) ── */}
-          <div className="hidden lg:block lg:overflow-y-auto lg:p-8 lg:h-full">
+          <div className="hidden lg:block lg:overflow-y-auto lg:p-8" style={{ minHeight: 0 }}>
             {activeSwap ? (
               <div className="max-w-2xl space-y-4">
                 {/* Swap type heading */}

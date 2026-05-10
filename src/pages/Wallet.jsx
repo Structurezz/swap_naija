@@ -8,7 +8,8 @@ import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import Badge from '../components/ui/Badge';
 import Spinner from '../components/ui/Spinner';
-import { Wallet as WalletIcon, Plus, History, ShieldCheck, Zap, ArrowDownLeft } from 'lucide-react';
+import { Wallet as WalletIcon, Plus, History, ShieldCheck, Zap, ArrowDownLeft, Coins } from 'lucide-react';
+import { formatBC } from '../utils/currency';
 import { formatDistanceToNow } from 'date-fns';
 
 const PRESET_AMOUNTS = [500, 1000, 2000, 5000];
@@ -71,13 +72,13 @@ export default function Wallet() {
   const balanceHero = (
     <div className="bg-gradient-to-br from-primary to-primary/80 rounded-3xl p-6 lg:p-8 text-white">
       <div className="flex items-center gap-2 mb-4 opacity-80">
-        <WalletIcon size={17} />
-        <span className="text-sm font-medium">SwapNaija Wallet</span>
+        <Coins size={17} />
+        <span className="text-sm font-medium">Barter Credits</span>
       </div>
       <p className="text-4xl lg:text-5xl font-display font-bold tracking-tight">
-        ₦{(walletBalance / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })}
+        {(walletBalance / 100).toLocaleString('en-NG', { minimumFractionDigits: 2 })} BC
       </p>
-      <p className="text-sm opacity-70 mt-1">Available balance</p>
+      <p className="text-sm opacity-70 mt-1">Available Barter Credits · 1 BC = ₦1</p>
       <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 mt-5">
         <div className="bg-white/10 rounded-2xl py-2.5 text-center">
           <p className="text-xs opacity-60">Swaps</p>
@@ -85,7 +86,7 @@ export default function Wallet() {
         </div>
         <div className="bg-white/10 rounded-2xl py-2.5 text-center">
           <p className="text-xs opacity-60">Credits</p>
-          <p className="font-bold text-sm">₦{(user?.swapCredits || 0).toLocaleString()}</p>
+          <p className="font-bold text-sm">{(user?.swapCredits || 0).toLocaleString()} BC</p>
         </div>
         <div className="bg-white/10 rounded-2xl py-2.5 text-center">
           <p className="text-xs opacity-60">Rating</p>
@@ -107,8 +108,8 @@ export default function Wallet() {
     <div className="bg-blue-50 border border-blue-100 rounded-2xl px-4 py-3 flex gap-3">
       <div className="text-blue-500 text-xl flex-none">💡</div>
       <p className="text-xs text-blue-700">
-        Top up your wallet to <span className="font-semibold">verify your account (₦1,000)</span> or
-        {' '}<span className="font-semibold">boost a listing (from ₦500)</span>.
+        Add Barter Credits to <span className="font-semibold">verify your account (1,000 BC)</span> or
+        {' '}<span className="font-semibold">boost a listing (from 500 BC)</span>.
       </p>
     </div>
   );
@@ -116,8 +117,8 @@ export default function Wallet() {
   const topupCard = (
     <div className="card space-y-4">
       <div className="flex items-center gap-2">
-        <Plus size={16} className="text-primary" />
-        <h2 className="font-display font-semibold">Top Up Wallet</h2>
+        <Coins size={16} className="text-primary" />
+        <h2 className="font-display font-semibold">Add Barter Credits</h2>
       </div>
       <div className="grid grid-cols-4 gap-2">
         {PRESET_AMOUNTS.map(amt => (
@@ -130,19 +131,19 @@ export default function Wallet() {
                 : 'border-gray-200 text-gray-600'
             }`}
           >
-            ₦{amt.toLocaleString()}
+            {amt.toLocaleString()} BC
           </button>
         ))}
       </div>
       <div className="relative">
-        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium">₦</span>
+        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-medium text-xs">BC</span>
         <input
           type="number"
           min="100"
           placeholder="Custom amount"
           value={customAmount}
           onChange={(e) => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
-          className="input-field pl-8"
+          className="input-field pl-10"
         />
       </div>
       <Button
@@ -153,9 +154,9 @@ export default function Wallet() {
         onClick={() => topupMutation.mutate()}
       >
         <Plus size={18} />
-        Top Up ₦{finalAmount > 0 ? finalAmount.toLocaleString() : '—'} via Paystack
+        Add {finalAmount > 0 ? `${finalAmount.toLocaleString()} BC` : '—'} via Paystack
       </Button>
-      <p className="text-xs text-center text-gray-400">Secured by Paystack · Instant credit to wallet</p>
+      <p className="text-xs text-center text-gray-400">1 BC = ₦1 · Secured by Paystack · Instant credit</p>
     </div>
   );
 
@@ -166,14 +167,14 @@ export default function Wallet() {
           <ShieldCheck size={18} className="text-blue-600" />
         </div>
         <p className="font-semibold text-sm text-center">Get Verified</p>
-        <p className="text-xs text-gray-500">₦1,000 from wallet</p>
+        <p className="text-xs text-gray-500">1,000 BC from wallet</p>
       </a>
       <a href="/swaps" className="card flex flex-col items-center gap-2 py-4 hover:border-primary hover:border transition cursor-pointer">
         <div className="w-10 h-10 bg-amber-50 rounded-xl flex items-center justify-center">
           <Zap size={18} className="text-amber-600" />
         </div>
         <p className="font-semibold text-sm text-center">Boost Listing</p>
-        <p className="text-xs text-gray-500">from ₦500</p>
+        <p className="text-xs text-gray-500">from 500 BC</p>
       </a>
     </div>
   );
@@ -184,7 +185,7 @@ export default function Wallet() {
     <div className="text-center py-8 text-gray-400">
       <WalletIcon size={32} className="mx-auto mb-2 opacity-30" />
       <p className="text-sm">No transactions yet</p>
-      <p className="text-xs mt-1">Top up your wallet to get started</p>
+      <p className="text-xs mt-1">Add Barter Credits to get started</p>
     </div>
   ) : (
     <div className="space-y-2">
@@ -208,7 +209,7 @@ export default function Wallet() {
             </div>
             <div className="text-right flex-none">
               <p className={`font-bold text-sm ${isCredit ? 'text-green-600' : 'text-gray-700'}`}>
-                {meta.sign}₦{(p.amountKobo / 100).toLocaleString()}
+                {meta.sign}{formatBC(p.amountKobo)}
               </p>
               <Badge variant={STATUS_VARIANTS[p.status] || 'default'} size="sm">
                 {p.status}
@@ -222,7 +223,7 @@ export default function Wallet() {
 
   return (
     <div className="bg-bg min-h-screen">
-      <TopBar title="Wallet" showBack />
+      <TopBar title="Barter Credits" showBack />
 
       {/* ── Mobile layout ── */}
       <div className="lg:hidden max-w-md mx-auto px-4 py-4 space-y-5">

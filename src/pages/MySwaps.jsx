@@ -3,8 +3,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import {
   getMySwaps, respondToSwap, setMeetup, payEscrowDeposit,
-  confirmSwap, disputeSwap, getEscrowInfo,
+  confirmSwap, disputeSwap, getEscrowInfo, payTopUp,
 } from '../api/swaps.api';
+import { formatBC } from '../utils/currency';
 import { useAuthStore } from '../store/auth.store';
 import SwapCard from '../components/features/swap/SwapCard';
 import SwapStatus from '../components/features/swap/SwapStatus';
@@ -14,7 +15,7 @@ import Input from '../components/ui/Input';
 import Spinner from '../components/ui/Spinner';
 import {
   MapPin, Shield, CheckCircle2, AlertTriangle,
-  ShieldCheck, Clock, Info, ArrowLeftRight,
+  ShieldCheck, Clock, Info, ArrowLeftRight, Coins,
 } from 'lucide-react';
 
 const TABS = [
@@ -34,7 +35,7 @@ const SWAP_TYPE_LABELS = {
 };
 
 // ─── Escrow status panel ──────────────────────────────────────────────────────
-function EscrowPanel({ swap, userId, depositNgn, refundNgn, platformFeeNgn, onPayDeposit, paying }) {
+function EscrowPanel({ swap, userId, depositKobo, refundKobo, platformFeeKobo, onPayDeposit, paying }) {
   const isInitiator = swap.initiatorId?.id === userId;
 
   const myPaid    = isInitiator ? swap.initiatorDepositPaid : swap.receiverDepositPaid;
@@ -42,6 +43,10 @@ function EscrowPanel({ swap, userId, depositNgn, refundNgn, platformFeeNgn, onPa
   const otherName = isInitiator
     ? swap.receiverId?.fullName  || 'Other party'
     : swap.initiatorId?.fullName || 'Other party';
+
+  const depositBC      = formatBC(depositKobo  || 100000);
+  const refundBC       = formatBC(refundKobo   || 80000);
+  const platformFeeBC  = formatBC(platformFeeKobo || 20000);
 
   if (swap.status === 'in_escrow') {
     return (
@@ -51,8 +56,8 @@ function EscrowPanel({ swap, userId, depositNgn, refundNgn, platformFeeNgn, onPa
           <p className="text-xs font-semibold text-green-700">Escrow Active — Both deposits secured</p>
         </div>
         <p className="text-xs text-green-600">
-          ₦{refundNgn.toLocaleString()} will be refunded to each party on completion.
-          SwapNaija keeps ₦{platformFeeNgn.toLocaleString()} per party as a protection fee.
+          {refundBC} will be refunded to each party on completion.
+          SwapNaija keeps {platformFeeBC} per party as a protection fee.
         </p>
       </div>
     );
@@ -64,10 +69,10 @@ function EscrowPanel({ swap, userId, depositNgn, refundNgn, platformFeeNgn, onPa
     <div className="mt-3 bg-blue-50 border border-blue-100 rounded-2xl p-3 space-y-2">
       <div className="flex items-center gap-2">
         <Shield size={14} className="text-blue-600" />
-        <p className="text-xs font-semibold text-blue-700">Escrow Protection — ₦{depositNgn?.toLocaleString() || 1000} per party</p>
+        <p className="text-xs font-semibold text-blue-700">Escrow Protection — {depositBC} per party</p>
       </div>
       <p className="text-xs text-blue-600 leading-relaxed">
-        Both parties deposit ₦{depositNgn?.toLocaleString() || 1000}. Swap completes → you get ₦{refundNgn?.toLocaleString() || 800} back.
+        Both parties deposit {depositBC} in Barter Credits. Swap completes → you get {refundBC} back.
         No-show or dispute → SwapNaija mediates and can penalise the bad actor.
       </p>
 
@@ -85,12 +90,68 @@ function EscrowPanel({ swap, userId, depositNgn, refundNgn, platformFeeNgn, onPa
       {!myPaid && (
         <Button fullWidth size="sm" loading={paying} onClick={onPayDeposit}>
           <Shield size={14} />
-          Pay ₦{depositNgn?.toLocaleString() || 1000} Escrow Deposit
+          Pay {depositBC} Escrow Deposit
         </Button>
       )}
       {myPaid && !theirPaid && (
         <p className="text-xs text-center text-gray-500 pt-0.5">Waiting for {otherName.split(' ')[0]} to pay their deposit...</p>
       )}
+    </div>
+  );
+}
+
+// ─── Top-up panel (value gap Barter Credits) ──────────────────────────────────
+function TopUpPanel({ swap, userId, onPayTopUp, paying }) {
+  if (!swap.topUpAmountKobo || swap.topUpAmountKobo <= 0 || swap.topUpPayerRole === 'none') return null;
+  if (!['accepted', 'in_escrow'].includes(swap.status)) return null;
+
+  const isInitiator = swap.initiatorId?.id === userId;
+  const myRole      = isInitiator ? 'initiator' : 'receiver';
+  const amIThePayer = swap.topUpPayerRole === myRole;
+  const otherName   = isInitiator
+    ? swap.receiverId?.fullName  || 'Other party'
+    : swap.initiatorId?.fullName || 'Other party';
+
+  const amountBC = formatBC(swap.topUpAmountKobo);
+
+  if (swap.topUpPaid) {
+    return (
+      <div className="mt-2 bg-amber-50 border border-amber-200 rounded-2xl p-3 flex items-center gap-2">
+        <CheckCircle2 size={14} className="text-amber-600 flex-none" />
+        <p className="text-xs text-amber-800">
+          Value gap top-up of <span className="font-semibold">{amountBC}</span> paid and held in escrow.
+          Released to the other party on swap completion.
+        </p>
+      </div>
+    );
+  }
+
+  if (amIThePayer) {
+    return (
+      <div className="mt-2 bg-amber-50 border border-amber-200 rounded-2xl p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Coins size={14} className="text-amber-600" />
+          <p className="text-xs font-semibold text-amber-800">Value Gap Top-Up Required</p>
+        </div>
+        <p className="text-xs text-amber-700">
+          Your item is worth less than the other party's. Pay <span className="font-bold">{amountBC}</span> from your Barter Credits.
+          This is held in escrow and transferred to them on swap completion.
+        </p>
+        <Button fullWidth size="sm" loading={paying} onClick={() => onPayTopUp(swap.id)}
+          className="bg-amber-500 hover:bg-amber-600 text-white">
+          <Coins size={13} />
+          Pay {amountBC} Top-Up
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-2 bg-amber-50 border border-amber-100 rounded-2xl p-3 flex items-center gap-2">
+      <Clock size={13} className="text-amber-500 flex-none" />
+      <p className="text-xs text-amber-700">
+        Waiting for {otherName.split(' ')[0]} to pay the <span className="font-semibold">{amountBC}</span> value-gap top-up.
+      </p>
     </div>
   );
 }
@@ -117,7 +178,7 @@ function ConfirmPanel({ swap, userId }) {
 }
 
 // ─── Swap detail body — shared by mobile inline and desktop right panel ───────
-function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, onAction, isDesktop }) {
+function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, topUpMutation, onAction, isDesktop }) {
   const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
   const isInvolved   = swap.initiatorId?.id === user?.id || swap.receiverId?.id === user?.id;
 
@@ -198,9 +259,9 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <EscrowPanel
           swap={swap}
           userId={user?.id}
-          depositNgn={escrowInfo?.depositNgn || 1000}
-          refundNgn={escrowInfo?.refundNgn || 800}
-          platformFeeNgn={escrowInfo?.platformFeeNgn || 200}
+          depositKobo={escrowInfo?.depositKobo || 100000}
+          refundKobo={escrowInfo?.refundKobo || 80000}
+          platformFeeKobo={escrowInfo?.platformFeeKobo || 20000}
           paying={escrowMutation.isPending}
           onPayDeposit={() => escrowMutation.mutate(swap.id)}
         />
@@ -211,9 +272,19 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <EscrowPanel
           swap={swap}
           userId={user?.id}
-          depositNgn={escrowInfo?.depositNgn || 1000}
-          refundNgn={escrowInfo?.refundNgn || 800}
-          platformFeeNgn={escrowInfo?.platformFeeNgn || 200}
+          depositKobo={escrowInfo?.depositKobo || 100000}
+          refundKobo={escrowInfo?.refundKobo || 80000}
+          platformFeeKobo={escrowInfo?.platformFeeKobo || 20000}
+        />
+      )}
+
+      {/* Value-gap top-up panel */}
+      {isInvolved && (
+        <TopUpPanel
+          swap={swap}
+          userId={user?.id}
+          paying={topUpMutation?.isPending}
+          onPayTopUp={(id) => topUpMutation?.mutate(id)}
         />
       )}
 
@@ -227,7 +298,7 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
         <div className="bg-green-50 border border-green-100 rounded-xl px-3 py-2 flex items-center gap-2">
           <ShieldCheck size={13} className="text-green-600 flex-none" />
           <p className="text-xs text-green-700">
-            Escrow deposit refunded — ₦{escrowInfo?.refundNgn || 800} returned to your wallet.
+            Escrow deposit refunded — {formatBC(escrowInfo?.refundKobo || 80000)} returned to your Barter Credits.
           </p>
         </div>
       )}
@@ -325,6 +396,23 @@ export default function MySwaps() {
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
   });
 
+  const topUpMutation = useMutation({
+    mutationFn: (id) => payTopUp(id),
+    onSuccess: () => {
+      toast.success('Top-up paid! Barter Credits held in escrow.');
+      invalidate();
+      refreshUser();
+    },
+    onError: (e) => {
+      const msg = e.response?.data?.error || 'Error';
+      if (msg.toLowerCase().includes('insufficient')) {
+        toast.error(msg + ' Go to Wallet to top up your Barter Credits.');
+      } else {
+        toast.error(msg);
+      }
+    },
+  });
+
   const disputeMutation = useMutation({
     mutationFn: ({ id, reason }) => disputeSwap(id, reason),
     onSuccess: () => {
@@ -349,6 +437,7 @@ export default function MySwaps() {
     escrowMutation,
     confirmMutation,
     respondMutation,
+    topUpMutation,
     onAction: handleAction,
   };
 

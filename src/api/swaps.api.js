@@ -9,3 +9,4 @@ export const setMeetup       = (id, data)   => client.patch(`/swaps/${id}/meetup
 export const payEscrowDeposit = (id)    => client.patch(`/swaps/${id}/escrow`).then(r => r.data.data);
 export const confirmSwap     = (id)     => client.patch(`/swaps/${id}/confirm`).then(r => r.data.data);
 export const disputeSwap     = (id, reason) => client.patch(`/swaps/${id}/dispute`, { reason }).then(r => r.data.data);
+export const payTopUp        = (id)         => client.patch(`/swaps/${id}/topup`).then(r => r.data.data);

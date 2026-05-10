@@ -7,7 +7,7 @@ let socketInstance = null;
 
 export function useSocket() {
   const { accessToken } = useAuthStore();
-  const { addMessage, updateConversation, setTyping } = useChatStore();
+  const { updateConversation, setTyping } = useChatStore();
   const socketRef = useRef(null);
 
   useEffect(() => {
@@ -24,33 +24,31 @@ export function useSocket() {
 
     socketRef.current = socketInstance;
 
-    socketInstance.on('message:new', (msg) => {
-      addMessage(msg.conversationId, msg);
+    // Keep conversation list up-to-date when a new message arrives
+    const onMessageNew = (msg) => {
       updateConversation(msg.conversationId, {
         lastMessage: msg.content,
         lastMsgAt: msg.createdAt,
       });
-    });
+    };
 
-    socketInstance.on('conversation:updated', (data) => {
-      updateConversation(data.conversationId, data);
-    });
+    const onConvUpdated  = (data) => updateConversation(data.conversationId, data);
+    const onTypingStart  = ({ conversationId, userId }) => setTyping(conversationId, userId, true);
+    const onTypingStop   = ({ conversationId, userId }) => setTyping(conversationId, userId, false);
 
-    socketInstance.on('typing:start', ({ conversationId, userId }) => {
-      setTyping(conversationId, userId, true);
-    });
-
-    socketInstance.on('typing:stop', ({ conversationId, userId }) => {
-      setTyping(conversationId, userId, false);
-    });
+    socketInstance.on('message:new',         onMessageNew);
+    socketInstance.on('conversation:updated', onConvUpdated);
+    socketInstance.on('typing:start',         onTypingStart);
+    socketInstance.on('typing:stop',          onTypingStop);
 
     return () => {
-      socketInstance?.off('message:new');
-      socketInstance?.off('conversation:updated');
-      socketInstance?.off('typing:start');
-      socketInstance?.off('typing:stop');
+      // Pass the exact handler reference so we only remove what we added
+      socketInstance?.off('message:new',         onMessageNew);
+      socketInstance?.off('conversation:updated', onConvUpdated);
+      socketInstance?.off('typing:start',         onTypingStart);
+      socketInstance?.off('typing:stop',          onTypingStop);
     };
-  }, [accessToken, addMessage, updateConversation, setTyping]);
+  }, [accessToken, updateConversation, setTyping]);
 
   return socketRef.current;
 }

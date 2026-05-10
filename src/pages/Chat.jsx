@@ -25,7 +25,7 @@ export default function Chat() {
 
   const conversationCount = conversations.length || data?.length || 0;
   const unreadCount = (conversations.length ? conversations : data || [])
-    .filter(c => c.unreadCount > 0).length;
+    .filter(c => c.unread > 0).length;
 
   return (
     <div className="bg-bg min-h-screen">

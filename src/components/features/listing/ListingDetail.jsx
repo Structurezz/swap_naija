@@ -1,11 +1,13 @@
-import { Link } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield, MessageCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 import Badge from '../../ui/Badge';
 import Avatar from '../../ui/Avatar';
 import Button from '../../ui/Button';
 import { getListingPlaceholder } from '../../../utils/placeholder';
 import { getPublicProfile } from '../../../api/users.api';
+import { startConversation } from '../../../api/messages.api';
 
 const CONDITION_LABELS = { new: 'New', like_new: 'Like New', good: 'Good', fair: 'Fair', poor: 'Poor' };
 

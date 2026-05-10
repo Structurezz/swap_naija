@@ -1,22 +1,27 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
   getMySwaps, respondToSwap, setMeetup, payEscrowDeposit,
   confirmSwap, disputeSwap, getEscrowInfo, payTopUp,
 } from '../api/swaps.api';
+import { startConversation } from '../api/messages.api';
+import { createReview } from '../api/reviews.api';
 import { formatBC } from '../utils/currency';
 import { useAuthStore } from '../store/auth.store';
 import SwapCard from '../components/features/swap/SwapCard';
 import SwapStatus from '../components/features/swap/SwapStatus';
+import ReviewStars from '../components/features/review/ReviewStars';
 import Modal from '../components/ui/Modal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import Spinner from '../components/ui/Spinner';
+import Avatar from '../components/ui/Avatar';
 import {
   MapPin, Shield, CheckCircle2, AlertTriangle,
   ShieldCheck, Clock, Info, ArrowLeftRight, Coins,
-  ChevronLeft, ChevronRight,
+  ChevronLeft, ChevronRight, MessageCircle, Star,
 } from 'lucide-react';
 
 const TABS = [
@@ -183,7 +188,7 @@ function ConfirmPanel({ swap, userId }) {
 }
 
 // ─── Swap detail body — shared by mobile inline and desktop right panel ───────
-function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, topUpMutation, onAction, isDesktop }) {
+function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, topUpMutation, messageMutation, onAction, onReview, isDesktop }) {
   const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
   const isInvolved   = swap.initiatorId?.id === user?.id || swap.receiverId?.id === user?.id;
 
@@ -211,6 +216,8 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
   };
 
   const actions = getActions();
+  const otherId   = swap.initiatorId?.id === user?.id ? swap.receiverId?.id : swap.initiatorId?.id;
+  const otherUser = swap.initiatorId?.id === user?.id ? swap.receiverId    : swap.initiatorId;
 
   return (
     <div className="space-y-2">
@@ -321,6 +328,31 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
           ))}
         </div>
       )}
+
+      {/* Message + Review row */}
+      {isInvolved && (
+        <div className="flex gap-2 pt-1 flex-wrap border-t border-gray-100 mt-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            loading={messageMutation?.isPending}
+            onClick={() => messageMutation?.mutate({ otherId, swapId: swap.id })}
+          >
+            <MessageCircle size={14} />
+            Message
+          </Button>
+          {swap.status === 'completed' && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => onReview(swap, otherUser)}
+            >
+              <Star size={14} />
+              Leave Review
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -328,13 +360,17 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function MySwaps() {
   const { user, refreshUser } = useAuthStore();
+  const navigate = useNavigate();
   const [tab, setTab]               = useState('');
   const [page, setPage]             = useState(1);
   const [selectedSwap, setSelectedSwap] = useState(null);
   const [activeSwap, setActiveSwap] = useState(null);
   const [meetupForm, setMeetupForm] = useState({ location: '', date: '' });
   const [disputeReason, setDisputeReason] = useState('');
-  const [modal, setModal]           = useState(null); // 'meetup' | 'dispute'
+  const [modal, setModal]           = useState(null); // 'meetup' | 'dispute' | 'review'
+  const [reviewTarget, setReviewTarget] = useState(null); // { swap, otherUser }
+  const [reviewRating, setReviewRating] = useState(0);
+  const [reviewComment, setReviewComment] = useState('');
   const qc = useQueryClient();
 
   const { data: swapData, isLoading } = useQuery({
@@ -450,12 +486,45 @@ export default function MySwaps() {
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
   });
 
+  const messageMutation = useMutation({
+    mutationFn: ({ otherId, swapId }) => startConversation(otherId, swapId),
+    onSuccess: (conv) => {
+      qc.invalidateQueries({ queryKey: ['conversations'] });
+      navigate(`/chat/${conv.id}`);
+    },
+    onError: (e) => toast.error(e.response?.data?.error || 'Could not open chat'),
+  });
+
+  const reviewMutation = useMutation({
+    mutationFn: ({ swapId, revieweeId, rating, comment }) =>
+      createReview({ swapId, revieweeId, rating, comment }),
+    onSuccess: (_, vars) => {
+      toast.success('Review submitted! ⭐');
+      qc.invalidateQueries({ queryKey: ['reviews', vars.revieweeId] });
+      setModal(null);
+      setReviewRating(0);
+      setReviewComment('');
+      setReviewTarget(null);
+    },
+    onError: (e) => {
+      const msg = e.response?.data?.error || 'Failed to submit review';
+      toast.error(msg.includes('already') ? 'You already reviewed this swap.' : msg);
+    },
+  });
+
   const handleAction = (swap, action) => {
     if (action === 'meetup')  { setSelectedSwap(swap); setModal('meetup');  return; }
     if (action === 'dispute') { setSelectedSwap(swap); setModal('dispute'); return; }
     if (action === 'accept')  respondMutation.mutate({ id: swap.id, action: 'accept' });
     if (action === 'cancel')  respondMutation.mutate({ id: swap.id, action: 'cancel' });
     if (action === 'confirm') confirmMutation.mutate(swap.id);
+  };
+
+  const handleReview = (swap, otherUser) => {
+    setReviewTarget({ swap, otherUser });
+    setReviewRating(0);
+    setReviewComment('');
+    setModal('review');
   };
 
   const sharedDetailProps = {
@@ -465,7 +534,9 @@ export default function MySwaps() {
     confirmMutation,
     respondMutation,
     topUpMutation,
+    messageMutation,
     onAction: handleAction,
+    onReview: handleReview,
   };
 
   // Tab strip used in both mobile header area and desktop header
@@ -774,6 +845,70 @@ export default function MySwaps() {
             Submit Dispute
           </Button>
         </div>
+      </Modal>
+
+      {/* Review Modal */}
+      <Modal
+        isOpen={modal === 'review'}
+        onClose={() => { setModal(null); setReviewTarget(null); }}
+        title="Leave a Review"
+      >
+        {reviewTarget && (
+          <div className="space-y-5">
+            {/* Who you're reviewing */}
+            <div className="flex items-center gap-3 bg-gray-50 rounded-2xl px-4 py-3">
+              <Avatar
+                src={reviewTarget.otherUser?.avatarUrl}
+                name={reviewTarget.otherUser?.fullName}
+                size="md"
+              />
+              <div>
+                <p className="font-semibold text-sm text-ink">{reviewTarget.otherUser?.fullName}</p>
+                <p className="text-xs text-gray-400">Your swap partner</p>
+              </div>
+            </div>
+
+            {/* Star rating */}
+            <div>
+              <label className="block text-sm font-medium mb-2">How was the swap?</label>
+              <ReviewStars rating={reviewRating} size={36} interactive onChange={setReviewRating} />
+              {reviewRating > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {['', 'Poor experience', 'Fair', 'Good', 'Very good', 'Excellent!'][reviewRating]}
+                </p>
+              )}
+            </div>
+
+            {/* Comment */}
+            <div>
+              <label className="block text-sm font-medium mb-1">Comment <span className="text-gray-400 font-normal">(optional)</span></label>
+              <textarea
+                value={reviewComment}
+                onChange={(e) => setReviewComment(e.target.value)}
+                placeholder="Describe how the swap went — was the item as described? Did they show up on time?"
+                rows={3}
+                className="input-field resize-none"
+                maxLength={500}
+              />
+              <p className="text-xs text-gray-400 mt-1">{reviewComment.length}/500</p>
+            </div>
+
+            <Button
+              fullWidth
+              loading={reviewMutation.isPending}
+              disabled={reviewRating === 0}
+              onClick={() => reviewMutation.mutate({
+                swapId:     reviewTarget.swap.id,
+                revieweeId: reviewTarget.otherUser?.id,
+                rating:     reviewRating,
+                comment:    reviewComment,
+              })}
+            >
+              <Star size={16} />
+              Submit Review
+            </Button>
+          </div>
+        )}
       </Modal>
     </div>
   );

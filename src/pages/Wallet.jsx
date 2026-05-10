@@ -66,7 +66,8 @@ export default function Wallet() {
     onError: (err) => toast.error(err.response?.data?.error || 'Top-up failed'),
   });
 
-  const walletBalance = user?.walletBalance ?? data?.walletBalance ?? 0;
+  // Prefer the fresh API value over the potentially stale auth store cache
+  const walletBalance = data?.walletBalance ?? user?.walletBalance ?? 0;
   const finalAmount   = customAmount ? parseInt(customAmount) || 0 : selectedAmount;
 
   const balanceHero = (
@@ -193,7 +194,17 @@ export default function Wallet() {
         const isRefund = p.status === 'refunded';
         const isCredit = p.paymentType === 'topup' || isRefund;
         const baseMeta = TYPE_META[p.paymentType] || { label: p.paymentType, color: 'text-gray-600', icon: WalletIcon };
-        const label = p.paymentType === 'escrow' && isRefund ? 'Escrow Refund' : baseMeta.label;
+        const escrowTypeLabel = {
+          escrow_deposit:           'Escrow Deposit',
+          escrow_completion_refund: 'Escrow Refund',
+          escrow_cancelled_refund:  'Escrow Cancelled — Refund',
+          topup_paid:               'Value Gap Top-up',
+          topup_released:           'Top-up Released',
+          topup_cancelled_refund:   'Top-up Refund',
+        }[p.meta?.type];
+        const label = p.paymentType === 'escrow'
+          ? (escrowTypeLabel || (isRefund ? 'Escrow Refund' : 'Escrow Deposit'))
+          : baseMeta.label;
         const Icon  = baseMeta.icon;
         const sign  = isCredit ? '+' : '-';
         return (

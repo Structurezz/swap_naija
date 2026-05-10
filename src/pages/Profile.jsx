@@ -1,6 +1,6 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   Edit, LogOut, Plus, Lock, Trash2, ShieldCheck, Gift,
   Star, ArrowLeftRight, MapPin, CalendarDays, LayoutGrid,
@@ -11,6 +11,7 @@ import {
 import toast from 'react-hot-toast';
 import { getPublicProfile } from '../api/users.api';
 import { initiateVerify } from '../api/payments.api';
+import { getNotifPrefs, updateNotifPrefs, unsubscribeAll } from '../api/notifications.api';
 import { useAuthStore } from '../store/auth.store';
 import { useAuth } from '../hooks/useAuth';
 import ProfileCard from '../components/features/profile/ProfileCard';
@@ -267,58 +268,119 @@ function SectionVerification({ user }) {
 }
 
 // ─── Section: Notifications ───────────────────────────────────────────────────
-const NOTIF_DEFAULTS = {
-  swapUpdates: true, newMessages: true, escrowAlerts: true,
-  newMatches: false, marketing: false,
-};
-
 function SectionNotifications() {
-  const [prefs, setPrefs] = useState(() => {
-    try { return { ...NOTIF_DEFAULTS, ...JSON.parse(localStorage.getItem('swapnaija_notifs') || '{}') }; }
-    catch { return NOTIF_DEFAULTS; }
+  const { user } = useAuthStore();
+  const qc = useQueryClient();
+
+  const { data: prefs, isLoading } = useQuery({
+    queryKey: ['notif-prefs'],
+    queryFn: getNotifPrefs,
+    // Seed from user model while loading
+    placeholderData: {
+      swapUpdates: user?.emailPrefs?.swapUpdates !== false,
+      dailyDigest: user?.emailPrefs?.dailyDigest !== false,
+      marketing:   user?.emailPrefs?.marketing === true,
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: updateNotifPrefs,
+    onSuccess: (updated) => {
+      qc.setQueryData(['notif-prefs'], updated);
+    },
+    onError: () => toast.error('Failed to save preference'),
+  });
+
+  const unsubMutation = useMutation({
+    mutationFn: unsubscribeAll,
+    onSuccess: () => {
+      qc.setQueryData(['notif-prefs'], { swapUpdates: false, dailyDigest: false, marketing: false });
+      toast.success('Unsubscribed from all emails');
+    },
+    onError: () => toast.error('Failed to unsubscribe'),
   });
 
   const toggle = (key) => {
     const next = { ...prefs, [key]: !prefs[key] };
-    setPrefs(next);
-    localStorage.setItem('swapnaija_notifs', JSON.stringify(next));
+    updateMutation.mutate({ [key]: !prefs[key] });
+    qc.setQueryData(['notif-prefs'], next); // optimistic
   };
 
-  const ITEMS = [
-    { key: 'swapUpdates',  label: 'Swap updates',        desc: 'When a swap is accepted, declined, or completed' },
-    { key: 'newMessages',  label: 'New messages',         desc: 'When someone sends you a chat message' },
-    { key: 'escrowAlerts', label: 'Escrow alerts',        desc: 'Deposit confirmations and release notifications' },
-    { key: 'newMatches',   label: 'New swap suggestions', desc: 'When SwapNaija finds a potential match for you' },
-    { key: 'marketing',    label: 'Tips & promotions',    desc: 'Product updates, swap tips and feature releases' },
+  const EMAIL_ITEMS = [
+    {
+      key: 'swapUpdates',
+      label: 'Swap & escrow emails',
+      desc: 'Proposals, acceptances, escrow deposits, confirmations, disputes, and wallet top-ups',
+    },
+    {
+      key: 'dailyDigest',
+      label: 'Daily digest (07:00 / 13:00 / 21:00)',
+      desc: 'Morning, afternoon and night summaries with your pending actions and swap stats',
+    },
+    {
+      key: 'marketing',
+      label: 'Tips & promotions',
+      desc: 'Product updates, swap tips and feature releases',
+    },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-display font-bold text-ink mb-1">Notifications</h2>
-        <p className="text-sm text-gray-500">Choose what you want to be notified about</p>
+        <h2 className="text-lg font-display font-bold text-ink mb-1">Email Notifications</h2>
+        <p className="text-sm text-gray-500">
+          Control which emails SwapNaija sends to{' '}
+          <span className="font-medium text-ink">{user?.email || 'your registered email'}</span>
+        </p>
       </div>
 
+      {!user?.email && (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
+          <Bell size={16} className="text-amber-600 flex-none mt-0.5" />
+          <div>
+            <p className="text-sm font-medium text-amber-800">No email address on file</p>
+            <p className="text-xs text-amber-700 mt-0.5">
+              Add an email in your profile to receive notifications.{' '}
+              <Link to="/profile/edit" className="underline">Edit profile →</Link>
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="card divide-y divide-gray-100 !p-0 overflow-hidden">
-        {ITEMS.map(({ key, label, desc }) => (
+        {EMAIL_ITEMS.map(({ key, label, desc }) => (
           <div key={key} className="flex items-center justify-between px-5 py-4">
             <div className="flex-1 min-w-0 pr-4">
               <p className="text-sm font-medium text-ink">{label}</p>
               <p className="text-xs text-gray-400 mt-0.5">{desc}</p>
             </div>
             <button
+              disabled={isLoading || updateMutation.isPending}
               onClick={() => toggle(key)}
-              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-none ${prefs[key] ? 'bg-primary' : 'bg-gray-200'}`}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors flex-none ${
+                prefs?.[key] ? 'bg-primary' : 'bg-gray-200'
+              } disabled:opacity-50`}
             >
-              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${prefs[key] ? 'translate-x-6' : 'translate-x-1'}`} />
+              <span className={`inline-block h-4 w-4 rounded-full bg-white shadow transition-transform ${
+                prefs?.[key] ? 'translate-x-6' : 'translate-x-1'
+              }`} />
             </button>
           </div>
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 text-center">
-        Notification preferences are saved locally on this device.
-      </p>
+      <div className="flex items-center justify-between pt-1">
+        <p className="text-xs text-gray-400">
+          Preferences are synced to your account across devices.
+        </p>
+        <button
+          onClick={() => unsubMutation.mutate()}
+          disabled={unsubMutation.isPending}
+          className="text-xs text-red-500 hover:text-red-600 font-medium disabled:opacity-50 transition"
+        >
+          {unsubMutation.isPending ? 'Unsubscribing...' : 'Unsubscribe all'}
+        </button>
+      </div>
     </div>
   );
 }

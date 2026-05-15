@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { MapPin, Eye, Repeat2 } from 'lucide-react';
+import { MapPin, Eye, Repeat2, ImageOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../../ui/Badge';
-import { getListingPlaceholder } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC } from '../../../utils/placeholder';
 
 const CONDITION_LABELS = {
   new: 'New',
@@ -21,8 +21,7 @@ const CONDITION_VARIANTS = {
 };
 
 function ListingCard({ listing }) {
-  const placeholder = getListingPlaceholder(listing);
-  const img = listing.images?.[0] || placeholder;
+  const firstImage = listing.images?.[0];
 
   return (
     <motion.div
@@ -31,13 +30,20 @@ function ListingCard({ listing }) {
     >
       <Link to={`/listing/${listing.id}`} className="block card p-0 overflow-hidden">
         <div className="relative">
-          <img
-            src={img}
-            alt={listing.title}
-            className="w-full h-40 object-cover"
-            loading="lazy"
-            onError={(e) => { e.currentTarget.src = placeholder; }}
-          />
+          {firstImage ? (
+            <img
+              src={firstImage}
+              alt={listing.title}
+              className="w-full h-40 object-cover"
+              loading="lazy"
+              onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
+            />
+          ) : (
+            <div className="w-full h-40 bg-gray-100 flex flex-col items-center justify-center gap-1.5">
+              <ImageOff size={24} className="text-gray-300" />
+              <span className="text-xs text-gray-300 font-medium">No photo</span>
+            </div>
+          )}
           {listing.isBoosted && (
             <span className="absolute top-2 left-2 bg-accent text-white text-xs px-2 py-0.5 rounded-full font-semibold">
               Boosted

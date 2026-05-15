@@ -8,7 +8,7 @@ import { proposeSwap } from '../../../api/swaps.api';
 import { useAuthStore } from '../../../store/auth.store';
 import Button from '../../ui/Button';
 import Avatar from '../../ui/Avatar';
-import { getListingPlaceholder } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC } from '../../../utils/placeholder';
 import { formatBC } from '../../../utils/currency';
 import {
   ArrowLeftRight, Coins, Shield, AlertCircle,
@@ -34,15 +34,20 @@ function calcDeposit(initiatorValue, receiverValue, collateralPct) {
 
 // ── Small listing thumbnail card ──────────────────────────────────────────────
 function ListingCard({ listing, label, highlight }) {
-  const ph = getListingPlaceholder(listing, 120, 120);
   return (
     <div className={`flex items-center gap-3 rounded-2xl p-3 ${highlight ? 'bg-primary/5 border border-primary/20' : 'bg-gray-50 border border-gray-100'}`}>
-      <img
-        src={listing.images?.[0] || ph}
-        alt={listing.title}
-        className="w-14 h-14 rounded-xl object-cover flex-none"
-        onError={(e) => { e.currentTarget.src = ph; }}
-      />
+      {listing.images?.[0] ? (
+        <img
+          src={listing.images[0]}
+          alt={listing.title}
+          className="w-14 h-14 rounded-xl object-cover flex-none"
+          onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-xl bg-gray-200 flex items-center justify-center flex-none">
+          <span className="text-gray-400 text-xs font-medium">No img</span>
+        </div>
+      )}
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-gray-400 mb-0.5">{label}</p>
         <p className="font-semibold text-sm text-ink truncate">{listing.title}</p>

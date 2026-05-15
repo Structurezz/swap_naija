@@ -18,22 +18,32 @@ const NIGERIAN_STATES = [
   'Taraba','Yobe','Zamfara',
 ];
 
+const optionalEnum = (values) =>
+  z.preprocess(v => (v === '' ? undefined : v), z.enum(values).optional());
+
+const optionalStr = () =>
+  z.preprocess(v => (v === '' ? undefined : v), z.string().optional());
+
+const optionalNum = () =>
+  z.preprocess(v => (v === '' || v === undefined ? undefined : Number(v)),
+    z.number().min(0).optional());
+
 const schema = z.object({
   title:              z.string().min(3, 'Title must be at least 3 characters').max(200),
   description:        z.string().min(10, 'Description must be at least 10 characters'),
-  categoryId:         z.string().optional(),
+  categoryId:         optionalStr(),
   listingType:        z.enum(['goods', 'services', 'both']),
-  condition:          z.enum(['new', 'like_new', 'good', 'fair', 'poor']).optional(),
-  estimatedValue:     z.coerce.number().min(0, 'Must be 0 or more').optional(),
-  minSwapValue:       z.coerce.number().min(0).optional(),
-  wantsTitle:         z.string().max(200).optional(),
-  wantsCategoryId:    z.string().optional(),
-  wantsDescription:   z.string().optional(),
-  wantsValueMin:      z.coerce.number().min(0).optional(),
-  wantsValueMax:      z.coerce.number().min(0).optional(),
-  locationState:      z.string().optional(),
-  locationLga:        z.string().optional(),
-  locationArea:       z.string().optional(),
+  condition:          optionalEnum(['new', 'like_new', 'good', 'fair', 'poor']),
+  estimatedValue:     optionalNum(),
+  minSwapValue:       optionalNum(),
+  wantsTitle:         optionalStr(),
+  wantsCategoryId:    optionalStr(),
+  wantsDescription:   optionalStr(),
+  wantsValueMin:      optionalNum(),
+  wantsValueMax:      optionalNum(),
+  locationState:      optionalStr(),
+  locationLga:        optionalStr(),
+  locationArea:       optionalStr(),
 });
 
 const SelectField = ({ label, error, children, ...props }) => (

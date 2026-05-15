@@ -13,11 +13,11 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://swap-nigeria.onrender.com',
+        target: 'https://swapnigeria-production.up.railway.app',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'https://swap-nigeria.onrender.com',
+        target: 'https://swapnigeria-production.up.railway.app',
         ws: true,
         changeOrigin: true,
       },

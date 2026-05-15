@@ -53,9 +53,10 @@ const SelectField = ({ label, error, children, ...props }) => (
 );
 
 function ListingForm({ onSubmit, loading, defaultValues }) {
-  const { register, handleSubmit, watch, formState: { errors } } = useForm({
+  const { register, handleSubmit, watch, formState: { errors }, setFocus } = useForm({
     resolver: zodResolver(schema),
     defaultValues: { listingType: 'goods', ...defaultValues },
+    mode: 'onTouched',
   });
 
   const listingType = watch('listingType');
@@ -114,8 +115,16 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
     onSubmit(clean, images.map(img => img.file));
   };
 
+  const handleInvalid = () => {
+    const firstError = Object.keys(errors)[0];
+    if (firstError) {
+      try { setFocus(firstError); } catch {}
+      document.getElementById(`field-${firstError}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  };
+
   return (
-    <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
+    <form onSubmit={handleSubmit(handleFormSubmit, handleInvalid)} className="space-y-5">
 
       {/* ── Photos ── */}
       <div>
@@ -202,15 +211,17 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
       </SelectField>
 
       {/* ── Title ── */}
-      <Input
-        label="Title"
-        placeholder="e.g. Samsung Galaxy S21 Ultra"
-        error={errors.title?.message}
-        {...register('title')}
-      />
+      <div id="field-title">
+        <Input
+          label="Title"
+          placeholder="e.g. Samsung Galaxy S21 Ultra"
+          error={errors.title?.message}
+          {...register('title')}
+        />
+      </div>
 
       {/* ── Description ── */}
-      <div className="space-y-1">
+      <div className="space-y-1" id="field-description">
         <label className="block text-sm font-medium text-ink">Description</label>
         <textarea
           {...register('description')}
@@ -366,6 +377,16 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
         <span>🚚</span>
         <span>All swaps are delivered — you'll add shipment details after a swap is accepted.</span>
       </div>
+
+      {/* ── Validation errors summary ── */}
+      {Object.keys(errors).length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 space-y-1">
+          <p className="text-sm font-semibold text-red-700">Please fix the following:</p>
+          {Object.values(errors).map((err, i) => (
+            <p key={i} className="text-xs text-red-600">• {err.message}</p>
+          ))}
+        </div>
+      )}
 
       <Button type="submit" fullWidth loading={loading}>
         {defaultValues ? 'Update Listing' : 'Post Listing'}

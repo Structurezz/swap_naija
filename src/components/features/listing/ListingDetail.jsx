@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 import Badge from '../../ui/Badge';
 import Avatar from '../../ui/Avatar';
 import Button from '../../ui/Button';
-import { IMAGE_FALLBACK_SRC } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC, resolveImageUrl } from '../../../utils/placeholder';
 import { getPublicProfile } from '../../../api/users.api';
 import { startConversation } from '../../../api/messages.api';
 
@@ -43,7 +43,7 @@ function OwnerListings({ ownerId, currentListingId }) {
             >
               {l.images?.[0] ? (
                 <img
-                  src={l.images[0]}
+                  src={resolveImageUrl(l.images[0])}
                   alt={l.title}
                   className="w-full h-24 object-cover"
                   onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
@@ -79,7 +79,7 @@ function ListingDetail({ listing, onSwap, currentUserId }) {
           {listing.images.map((img, i) => (
             <img
               key={i}
-              src={img}
+              src={resolveImageUrl(img)}
               alt={`Image ${i + 1}`}
               className="w-72 h-56 object-cover rounded-2xl flex-shrink-0"
               onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}

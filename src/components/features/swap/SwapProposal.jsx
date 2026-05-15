@@ -8,7 +8,7 @@ import { proposeSwap } from '../../../api/swaps.api';
 import { useAuthStore } from '../../../store/auth.store';
 import Button from '../../ui/Button';
 import Avatar from '../../ui/Avatar';
-import { IMAGE_FALLBACK_SRC } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC, resolveImageUrl } from '../../../utils/placeholder';
 import { formatBC } from '../../../utils/currency';
 import {
   ArrowLeftRight, Coins, Shield, AlertCircle,
@@ -38,7 +38,7 @@ function ListingCard({ listing, label, highlight }) {
     <div className={`flex items-center gap-3 rounded-2xl p-3 ${highlight ? 'bg-primary/5 border border-primary/20' : 'bg-gray-50 border border-gray-100'}`}>
       {listing.images?.[0] ? (
         <img
-          src={listing.images[0]}
+          src={resolveImageUrl(listing.images[0])}
           alt={listing.title}
           className="w-14 h-14 rounded-xl object-cover flex-none"
           onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}

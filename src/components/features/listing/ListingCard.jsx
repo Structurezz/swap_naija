@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { MapPin, Eye, Repeat2, ImageOff } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Badge from '../../ui/Badge';
-import { IMAGE_FALLBACK_SRC } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC, resolveImageUrl } from '../../../utils/placeholder';
 
 const CONDITION_LABELS = {
   new: 'New',
@@ -21,7 +21,7 @@ const CONDITION_VARIANTS = {
 };
 
 function ListingCard({ listing }) {
-  const firstImage = listing.images?.[0];
+  const firstImage = resolveImageUrl(listing.images?.[0]);
 
   return (
     <motion.div

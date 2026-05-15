@@ -18,32 +18,22 @@ const NIGERIAN_STATES = [
   'Taraba','Yobe','Zamfara',
 ];
 
-const optionalEnum = (values) =>
-  z.preprocess(v => (v === '' ? undefined : v), z.enum(values).optional());
-
-const optionalStr = () =>
-  z.preprocess(v => (v === '' ? undefined : v), z.string().optional());
-
-const optionalNum = () =>
-  z.preprocess(v => (v === '' || v === undefined ? undefined : Number(v)),
-    z.number().min(0).optional());
-
 const schema = z.object({
-  title:              z.string().min(3, 'Title must be at least 3 characters').max(200),
-  description:        z.string().min(10, 'Description must be at least 10 characters'),
-  categoryId:         optionalStr(),
-  listingType:        z.enum(['goods', 'services', 'both']),
-  condition:          optionalEnum(['new', 'like_new', 'good', 'fair', 'poor']),
-  estimatedValue:     optionalNum(),
-  minSwapValue:       optionalNum(),
-  wantsTitle:         optionalStr(),
-  wantsCategoryId:    optionalStr(),
-  wantsDescription:   optionalStr(),
-  wantsValueMin:      optionalNum(),
-  wantsValueMax:      optionalNum(),
-  locationState:      optionalStr(),
-  locationLga:        optionalStr(),
-  locationArea:       optionalStr(),
+  title:           z.string().min(3, 'Title must be at least 3 characters').max(200),
+  description:     z.string().min(10, 'Description must be at least 10 characters'),
+  listingType:     z.enum(['goods', 'services', 'both']),
+  categoryId:      z.string().optional(),
+  condition:       z.string().optional(),
+  estimatedValue:  z.string().optional(),
+  minSwapValue:    z.string().optional(),
+  wantsTitle:      z.string().optional(),
+  wantsCategoryId: z.string().optional(),
+  wantsDescription:z.string().optional(),
+  wantsValueMin:   z.string().optional(),
+  wantsValueMax:   z.string().optional(),
+  locationState:   z.string().optional(),
+  locationLga:     z.string().optional(),
+  locationArea:    z.string().optional(),
 });
 
 const SelectField = ({ label, error, children, ...props }) => (
@@ -113,8 +103,15 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
     setImages(prev => [...prev, ...toAdd]);
   };
 
+  const NUM_FIELDS = ['estimatedValue', 'minSwapValue', 'wantsValueMin', 'wantsValueMax'];
+
   const handleFormSubmit = (data) => {
-    onSubmit(data, images.map(img => img.file));
+    const clean = {};
+    for (const [k, v] of Object.entries(data)) {
+      if (v === '' || v === undefined || v === null) continue;
+      clean[k] = NUM_FIELDS.includes(k) ? Number(v) : v;
+    }
+    onSubmit(clean, images.map(img => img.file));
   };
 
   return (

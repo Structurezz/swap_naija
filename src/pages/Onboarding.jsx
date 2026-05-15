@@ -26,7 +26,7 @@ export default function Onboarding() {
   const [devCode, setDevCode] = useState(null);
 
   // Email/password state
-  const [form, setForm]     = useState({ email: '', password: '', fullName: '', confirmPassword: '', phone: '+234' });
+  const [form, setForm]     = useState({ email: '', password: '', fullName: '', confirmPassword: '', phone: '' });
   const [pushEnabled, setPushEnabled] = useState(false);
 
   const {
@@ -66,14 +66,18 @@ export default function Onboarding() {
   };
 
   const handleRegister = async () => {
+    const { toast } = await import('react-hot-toast');
     if (form.password !== form.confirmPassword) {
-      const { toast } = await import('react-hot-toast');
       toast.error('Passwords do not match');
+      return;
+    }
+    if (form.phone && !/^\+234[0-9]{10}$/.test(form.phone)) {
+      toast.error('Phone must be in format +2348012345678');
       return;
     }
     try {
       const payload = { email: form.email, password: form.password, fullName: form.fullName };
-      if (form.phone && form.phone !== '+234') payload.phone = form.phone;
+      if (form.phone) payload.phone = form.phone;
       await registerAsync(payload);
     } catch {}
   };
@@ -203,7 +207,7 @@ export default function Onboarding() {
                 value={form.confirmPassword} onChange={setField('confirmPassword')}
                 placeholder="Repeat password" />
               <Input label="Phone Number (optional)" type="tel" value={form.phone}
-                onChange={setField('phone')} placeholder="+2348012345678" />
+                onChange={setField('phone')} placeholder="+2348012345678" autoComplete="off" />
               <label className="flex items-start gap-3 cursor-pointer select-none">
                 <div className="relative mt-0.5 flex-shrink-0">
                   <input

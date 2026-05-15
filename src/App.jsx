@@ -23,6 +23,7 @@ import FeaturedListings from './pages/FeaturedListings';
 import VerifyAccount from './pages/VerifyAccount';
 import InviteEarn from './pages/InviteEarn';
 import BoostListing from './pages/BoostListing';
+import EditListing from './pages/EditListing';
 import { useAuthStore } from './store/auth.store';
 import SplashScreen from './components/ui/SplashScreen';
 
@@ -63,6 +64,7 @@ function App() {
               <Route path="/verify-account" element={<VerifyAccount />} />
               <Route path="/invite" element={<InviteEarn />} />
               <Route path="/boost/:id" element={<BoostListing />} />
+              <Route path="/listing/:id/edit" element={<EditListing />} />
             </Route>
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

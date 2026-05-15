@@ -1,6 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield, MessageCircle } from 'lucide-react';
+import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield, MessageCircle, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Badge from '../../ui/Badge';
 import Avatar from '../../ui/Avatar';
@@ -121,8 +121,7 @@ function ListingDetail({ listing, onSwap, currentUserId }) {
         <p className="text-gray-700 mt-3 text-sm leading-relaxed">{listing.description}</p>
 
         <div className="flex gap-2 mt-3">
-          {listing.meetupOption && <Badge variant="success">Meetup</Badge>}
-          {listing.deliveryOption && <Badge variant="info">Delivery</Badge>}
+          <Badge variant="info">Delivery Only</Badge>
         </div>
       </div>
 
@@ -174,12 +173,20 @@ function ListingDetail({ listing, onSwap, currentUserId }) {
 
       {/* Actions */}
       {isOwner ? (
-        <Link to={`/boost/${listing.id}`}>
-          <Button fullWidth variant="secondary" size="lg">
-            <Zap size={18} className="text-amber-500" />
-            {listing.isBoosted ? 'Renew Boost' : 'Boost This Listing'}
-          </Button>
-        </Link>
+        <div className="flex gap-2">
+          <Link to={`/listing/${listing.id}/edit`} className="flex-1">
+            <Button fullWidth variant="outline" size="lg">
+              <Pencil size={16} />
+              Edit
+            </Button>
+          </Link>
+          <Link to={`/boost/${listing.id}`} className="flex-1">
+            <Button fullWidth variant="secondary" size="lg">
+              <Zap size={18} className="text-amber-500" />
+              {listing.isBoosted ? 'Renew Boost' : 'Boost'}
+            </Button>
+          </Link>
+        </div>
       ) : (
         <Button fullWidth onClick={onSwap} size="lg">
           Propose Swap

@@ -3,8 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import {
-  getMySwaps, respondToSwap, setMeetup, payEscrowDeposit,
-  confirmSwap, disputeSwap, getEscrowInfo, payTopUp,
+  getMySwaps, respondToSwap, setDeliveryAddress, submitShipment,
+  payEscrowDeposit, confirmSwap, disputeSwap, getEscrowInfo, payTopUp,
 } from '../api/swaps.api';
 import { startConversation } from '../api/messages.api';
 import { createReview } from '../api/reviews.api';
@@ -21,16 +21,37 @@ import Avatar from '../components/ui/Avatar';
 import {
   MapPin, Shield, CheckCircle2, AlertTriangle,
   ShieldCheck, Clock, Info, ArrowLeftRight, Coins,
-  ChevronLeft, ChevronRight, MessageCircle, Star,
+  ChevronLeft, ChevronRight, MessageCircle, Star, Truck, Package,
 } from 'lucide-react';
 
+const NIGERIAN_STATES = [
+  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
+  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT','Gombe','Imo',
+  'Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos','Nasarawa',
+  'Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto','Taraba',
+  'Yobe','Zamfara',
+];
+
+const COURIERS = [
+  { value: 'gig',      label: 'GIG Logistics' },
+  { value: 'kwik',     label: 'Kwik Delivery' },
+  { value: 'sendbox',  label: 'Sendbox' },
+  { value: 'dhl',      label: 'DHL Nigeria' },
+  { value: 'fedex',    label: 'FedEx Nigeria' },
+  { value: 'nipost',   label: 'NIPOST' },
+  { value: 'red_star', label: 'Red Star Express' },
+  { value: 'chisco',   label: 'Chisco Transport' },
+  { value: 'abc',      label: 'ABC Transport' },
+  { value: 'other',    label: 'Other Courier' },
+];
+
 const TABS = [
-  { value: '',           label: 'All' },
-  { value: 'proposed',   label: 'Pending' },
-  { value: 'accepted',   label: 'Accepted' },
-  { value: 'in_escrow',  label: 'In Escrow' },
-  { value: 'meetup_set', label: 'Meetup' },
-  { value: 'completed',  label: 'Done' },
+  { value: '',          label: 'All' },
+  { value: 'proposed',  label: 'Pending' },
+  { value: 'accepted',  label: 'Accepted' },
+  { value: 'in_escrow', label: 'In Escrow' },
+  { value: 'shipped',   label: 'Shipped' },
+  { value: 'completed', label: 'Done' },
 ];
 
 const SWAP_TYPE_LABELS = {
@@ -195,22 +216,27 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
   const getActions = () => {
     const isInitiator = swap.initiatorId?.id === user?.id;
     const isReceiver  = swap.receiverId?.id  === user?.id;
+    const myParty     = isInitiator ? 'initiator' : 'receiver';
     const actions = [];
     if (swap.status === 'proposed') {
       if (isReceiver) actions.push({ label: 'Accept', action: 'accept', variant: 'primary' });
       actions.push({ label: 'Decline', action: 'cancel', variant: 'secondary' });
     }
     if (swap.status === 'accepted') {
-      actions.push({ label: 'Set Meetup', action: 'meetup', variant: 'primary' });
       actions.push({ label: 'Cancel', action: 'cancel', variant: 'secondary' });
     }
-    if (['meetup_set', 'in_escrow'].includes(swap.status)) {
+    if (['accepted', 'in_escrow'].includes(swap.status)) {
+      const myAddressSet = swap[`${myParty}AddressSet`];
+      if (!myAddressSet) actions.push({ label: 'Set Delivery Address', action: 'address', variant: 'primary' });
+    }
+    if (swap.status === 'in_escrow') {
+      const myShipped = swap[`${myParty}Shipped`];
+      if (!myShipped) actions.push({ label: 'Submit Shipment Info', action: 'shipment', variant: 'primary' });
+    }
+    if (['in_escrow', 'shipped'].includes(swap.status)) {
       const myConfirmed = isInitiator ? swap.initiatorConfirmed : swap.receiverConfirmed;
       if (!myConfirmed) actions.push({ label: 'Confirm Receipt', action: 'confirm', variant: 'primary' });
       actions.push({ label: 'Dispute', action: 'dispute', variant: 'danger' });
-    }
-    if (swap.status === 'in_escrow') {
-      actions.push({ label: 'Set Meetup', action: 'meetup', variant: 'secondary' });
     }
     return actions;
   };
@@ -235,19 +261,6 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
       </div>
 
       <SwapCard swap={swap} currentUserId={user?.id} />
-
-      {/* Meetup info */}
-      {swap.meetupLocation && (
-        <div className="flex items-center gap-1.5 text-xs text-gray-500 bg-gray-50 rounded-xl px-3 py-2">
-          <MapPin size={12} className="flex-none" />
-          <span className="truncate">{swap.meetupLocation}</span>
-          {swap.meetupScheduled && (
-            <span className="flex-none text-gray-400 ml-auto">
-              {new Date(swap.meetupScheduled).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
-            </span>
-          )}
-        </div>
-      )}
 
       {/* Proposal note */}
       {swap.proposalNote && (
@@ -278,10 +291,70 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
 
       {/* Active escrow badge */}
       {swap.status === 'in_escrow' && (
-        <EscrowPanel
-          swap={swap}
-          userId={user?.id}
-        />
+        <EscrowPanel swap={swap} userId={user?.id} />
+      )}
+
+      {/* Delivery addresses */}
+      {['accepted', 'in_escrow', 'shipped', 'completed'].includes(swap.status) && (
+        <div className="mt-2 bg-gray-50 border border-gray-100 rounded-2xl p-3 space-y-2">
+          <p className="text-xs font-semibold text-gray-600 flex items-center gap-1.5">
+            <MapPin size={12} />
+            Delivery Addresses
+          </p>
+          <div className="flex gap-2">
+            {['initiator', 'receiver'].map(role => {
+              const nameKey  = role === 'initiator' ? swap.initiatorId?.fullName : swap.receiverId?.fullName;
+              const isSet    = swap[`${role}AddressSet`];
+              const addr     = swap[`${role}Address`];
+              return (
+                <div key={role} className={`flex-1 rounded-xl p-2 text-xs ${isSet ? 'bg-green-50 border border-green-100' : 'bg-gray-100'}`}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <CheckCircle2 size={11} className={isSet ? 'text-green-600' : 'text-gray-300'} />
+                    <span className={`font-medium ${isSet ? 'text-green-700' : 'text-gray-400'}`}>
+                      {(nameKey || role).split(' ')[0]}
+                    </span>
+                  </div>
+                  {addr && isSet && (
+                    <p className="text-gray-500 leading-relaxed">{addr.addressLine1}, {addr.city}, {addr.state}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Shipment tracking */}
+      {['in_escrow', 'shipped', 'completed'].includes(swap.status) && (
+        <div className="mt-2 bg-blue-50 border border-blue-100 rounded-2xl p-3 space-y-2">
+          <p className="text-xs font-semibold text-blue-700 flex items-center gap-1.5">
+            <Truck size={12} />
+            Shipment Tracking
+          </p>
+          <div className="flex gap-2">
+            {['initiator', 'receiver'].map(role => {
+              const shipped  = swap[`${role}Shipped`];
+              const shipment = swap[`${role}Shipment`];
+              const nameKey  = role === 'initiator' ? swap.initiatorId?.fullName : swap.receiverId?.fullName;
+              return (
+                <div key={role} className={`flex-1 rounded-xl p-2 text-xs ${shipped ? 'bg-green-50 border border-green-100' : 'bg-gray-100'}`}>
+                  <div className="flex items-center gap-1 mb-1">
+                    <CheckCircle2 size={11} className={shipped ? 'text-green-600' : 'text-gray-300'} />
+                    <span className={`font-medium ${shipped ? 'text-green-700' : 'text-gray-400'}`}>
+                      {(nameKey || role).split(' ')[0]}
+                    </span>
+                  </div>
+                  {shipment?.trackingNumber && (
+                    <div className="space-y-0.5">
+                      <p className="text-gray-600">{shipment.providerLabel}</p>
+                      <p className="text-gray-500 font-mono">{shipment.trackingNumber}</p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       )}
 
       {/* Value-gap top-up panel */}
@@ -295,7 +368,7 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
       )}
 
       {/* Confirmation status */}
-      {['meetup_set', 'in_escrow'].includes(swap.status) && (
+      {['in_escrow', 'shipped'].includes(swap.status) && (
         <ConfirmPanel swap={swap} userId={user?.id} />
       )}
 
@@ -365,9 +438,10 @@ export default function MySwaps() {
   const [page, setPage]             = useState(1);
   const [selectedSwap, setSelectedSwap] = useState(null);
   const [activeSwap, setActiveSwap] = useState(null);
-  const [meetupForm, setMeetupForm] = useState({ location: '', date: '' });
+  const [addressForm, setAddressForm] = useState({ fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', landmark: '' });
+  const [shipmentForm, setShipmentForm] = useState({ provider: '', providerLabel: '', trackingNumber: '', trackingUrl: '', notes: '' });
   const [disputeReason, setDisputeReason] = useState('');
-  const [modal, setModal]           = useState(null); // 'meetup' | 'dispute' | 'review'
+  const [modal, setModal]           = useState(null); // 'address' | 'shipment' | 'dispute' | 'review'
   const [reviewTarget, setReviewTarget] = useState(null); // { swap, otherUser }
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
@@ -409,10 +483,21 @@ export default function MySwaps() {
     onError: (e) => toast.error(e.response?.data?.error || 'Error'),
   });
 
-  const meetupMutation = useMutation({
-    mutationFn: ({ id, data }) => setMeetup(id, data),
+  const addressMutation = useMutation({
+    mutationFn: ({ id, data }) => setDeliveryAddress(id, data),
     onSuccess: (updatedSwap) => {
-      toast.success('Meetup set!');
+      toast.success('Delivery address saved!');
+      if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
+      invalidate();
+      setModal(null);
+    },
+    onError: (e) => toast.error(e.response?.data?.error || 'Error'),
+  });
+
+  const shipmentMutation = useMutation({
+    mutationFn: ({ id, data }) => submitShipment(id, data),
+    onSuccess: (updatedSwap) => {
+      toast.success('Shipment submitted!');
       if (activeSwap?.id === updatedSwap.id) setActiveSwap(updatedSwap);
       invalidate();
       setModal(null);
@@ -513,11 +598,12 @@ export default function MySwaps() {
   });
 
   const handleAction = (swap, action) => {
-    if (action === 'meetup')  { setSelectedSwap(swap); setModal('meetup');  return; }
-    if (action === 'dispute') { setSelectedSwap(swap); setModal('dispute'); return; }
-    if (action === 'accept')  respondMutation.mutate({ id: swap.id, action: 'accept' });
-    if (action === 'cancel')  respondMutation.mutate({ id: swap.id, action: 'cancel' });
-    if (action === 'confirm') confirmMutation.mutate(swap.id);
+    if (action === 'address')  { setSelectedSwap(swap); setAddressForm({ fullName: '', phone: '', addressLine1: '', addressLine2: '', city: '', state: '', landmark: '' }); setModal('address');  return; }
+    if (action === 'shipment') { setSelectedSwap(swap); setShipmentForm({ provider: '', providerLabel: '', trackingNumber: '', trackingUrl: '', notes: '' }); setModal('shipment'); return; }
+    if (action === 'dispute')  { setSelectedSwap(swap); setModal('dispute'); return; }
+    if (action === 'accept')   respondMutation.mutate({ id: swap.id, action: 'accept' });
+    if (action === 'cancel')   respondMutation.mutate({ id: swap.id, action: 'cancel' });
+    if (action === 'confirm')  confirmMutation.mutate(swap.id);
   };
 
   const handleReview = (swap, otherUser) => {
@@ -537,6 +623,8 @@ export default function MySwaps() {
     messageMutation,
     onAction: handleAction,
     onReview: handleReview,
+    addressMutation,
+    shipmentMutation,
   };
 
   // Tab strip used in both mobile header area and desktop header
@@ -639,17 +727,17 @@ export default function MySwaps() {
                       <div className="flex-1 min-w-0 space-y-1.5">
                         <div className="flex items-center gap-2 flex-wrap">
                           <SwapStatus status={swap.status} />
-                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                          <span className="text-xs text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full whitespace-nowrap">
                             {swapTypeMeta.icon} {swapTypeMeta.label}
                           </span>
                         </div>
                         <p className="text-sm font-medium text-ink truncate">
                           {swap.initiatorId?.fullName} ↔ {swap.receiverId?.fullName}
                         </p>
-                        {swap.meetupLocation && (
+                        {swap.initiatorShipped && swap.receiverShipped && (
                           <p className="text-xs text-gray-400 flex items-center gap-1 truncate">
-                            <MapPin size={10} className="flex-none" />
-                            {swap.meetupLocation}
+                            <Truck size={10} className="flex-none" />
+                            Both shipped
                           </p>
                         )}
                       </div>
@@ -772,40 +860,85 @@ export default function MySwaps() {
         </div>
       )}
 
-      {/* Meetup Modal */}
-      <Modal isOpen={modal === 'meetup'} onClose={() => setModal(null)} title="Set Meetup Details">
-        <div className="space-y-4">
-          {selectedSwap?.escrowActive && (
-            <div className="bg-green-50 border border-green-100 rounded-xl p-3 flex items-start gap-2">
-              <ShieldCheck size={15} className="text-green-600 flex-none mt-0.5" />
-              <p className="text-xs text-green-700">Escrow is active. Both deposits are secured. Confirm receipt after the exchange.</p>
-            </div>
-          )}
-          <Input
-            label="Meetup Location"
-            placeholder="e.g. Lagos Island, near Access Bank"
-            value={meetupForm.location}
-            onChange={(e) => setMeetupForm(p => ({ ...p, location: e.target.value }))}
-          />
-          <Input
-            label="Date & Time"
-            type="datetime-local"
-            value={meetupForm.date}
-            onChange={(e) => setMeetupForm(p => ({ ...p, date: e.target.value }))}
-          />
+      {/* Delivery Address Modal */}
+      <Modal isOpen={modal === 'address'} onClose={() => setModal(null)} title="Set Delivery Address">
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">The other party will ship your item to this address.</p>
+          <Input label="Full Name" placeholder="John Doe" value={addressForm.fullName}
+            onChange={e => setAddressForm(p => ({ ...p, fullName: e.target.value }))} />
+          <Input label="Phone" placeholder="+2348000000000" value={addressForm.phone}
+            onChange={e => setAddressForm(p => ({ ...p, phone: e.target.value }))} />
+          <Input label="Address Line 1" placeholder="12 Adeola Odeku Street" value={addressForm.addressLine1}
+            onChange={e => setAddressForm(p => ({ ...p, addressLine1: e.target.value }))} />
+          <Input label="Address Line 2 (optional)" placeholder="Flat 4B" value={addressForm.addressLine2}
+            onChange={e => setAddressForm(p => ({ ...p, addressLine2: e.target.value }))} />
+          <Input label="City / Town" placeholder="Lagos Island" value={addressForm.city}
+            onChange={e => setAddressForm(p => ({ ...p, city: e.target.value }))} />
+          <div>
+            <label className="block text-sm font-medium mb-1">State</label>
+            <select
+              className="input-field"
+              value={addressForm.state}
+              onChange={e => setAddressForm(p => ({ ...p, state: e.target.value }))}
+            >
+              <option value="">Select state...</option>
+              {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            </select>
+          </div>
+          <Input label="Landmark (optional)" placeholder="Near Shoprite" value={addressForm.landmark}
+            onChange={e => setAddressForm(p => ({ ...p, landmark: e.target.value }))} />
           <Button
             fullWidth
-            loading={meetupMutation.isPending}
-            disabled={!meetupForm.location || !meetupForm.date}
-            onClick={() => meetupMutation.mutate({
-              id: selectedSwap?.id,
-              data: {
-                meetupLocation: meetupForm.location,
-                meetupScheduled: new Date(meetupForm.date).toISOString(),
-              },
-            })}
+            loading={addressMutation.isPending}
+            disabled={!addressForm.fullName || !addressForm.phone || !addressForm.addressLine1 || !addressForm.city || !addressForm.state}
+            onClick={() => addressMutation.mutate({ id: selectedSwap?.id, data: addressForm })}
           >
-            Confirm Meetup
+            <MapPin size={15} />
+            Save Address
+          </Button>
+        </div>
+      </Modal>
+
+      {/* Shipment Modal */}
+      <Modal isOpen={modal === 'shipment'} onClose={() => setModal(null)} title="Submit Shipment Info">
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">Enter your courier and tracking details so the other party can track their delivery.</p>
+          <div>
+            <label className="block text-sm font-medium mb-1">Courier</label>
+            <select
+              className="input-field"
+              value={shipmentForm.provider}
+              onChange={e => {
+                const c = COURIERS.find(c => c.value === e.target.value);
+                setShipmentForm(p => ({ ...p, provider: e.target.value, providerLabel: c?.label || '' }));
+              }}
+            >
+              <option value="">Select courier...</option>
+              {COURIERS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
+            </select>
+          </div>
+          <Input label="Tracking Number" placeholder="e.g. GIG-1234567890" value={shipmentForm.trackingNumber}
+            onChange={e => setShipmentForm(p => ({ ...p, trackingNumber: e.target.value }))} />
+          <Input label="Tracking URL (optional)" placeholder="https://..." value={shipmentForm.trackingUrl}
+            onChange={e => setShipmentForm(p => ({ ...p, trackingUrl: e.target.value }))} />
+          <div>
+            <label className="block text-sm font-medium mb-1">Notes (optional)</label>
+            <textarea
+              className="input-field resize-none"
+              rows={2}
+              placeholder="e.g. Fragile — handle with care"
+              value={shipmentForm.notes}
+              onChange={e => setShipmentForm(p => ({ ...p, notes: e.target.value }))}
+            />
+          </div>
+          <Button
+            fullWidth
+            loading={shipmentMutation.isPending}
+            disabled={!shipmentForm.provider || !shipmentForm.trackingNumber}
+            onClick={() => shipmentMutation.mutate({ id: selectedSwap?.id, data: shipmentForm })}
+          >
+            <Truck size={15} />
+            Submit Shipment
           </Button>
         </div>
       </Modal>

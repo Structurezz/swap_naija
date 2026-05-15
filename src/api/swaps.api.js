@@ -5,7 +5,8 @@ export const getSwap         = (id)     => client.get(`/swaps/${id}`).then(r => 
 export const getEscrowInfo   = ()       => client.get('/swaps/escrow-info').then(r => r.data.data);
 export const proposeSwap     = (data)   => client.post('/swaps', data).then(r => r.data.data);
 export const respondToSwap   = (id, action) => client.patch(`/swaps/${id}/respond`, { action }).then(r => r.data.data);
-export const setMeetup       = (id, data)   => client.patch(`/swaps/${id}/meetup`, data).then(r => r.data.data);
+export const setDeliveryAddress = (id, data) => client.patch(`/swaps/${id}/address`, data).then(r => r.data.data);
+export const submitShipment     = (id, data) => client.patch(`/swaps/${id}/shipment`, data).then(r => r.data.data);
 export const payEscrowDeposit = (id)    => client.patch(`/swaps/${id}/escrow`).then(r => r.data.data);
 export const confirmSwap     = (id)     => client.patch(`/swaps/${id}/confirm`).then(r => r.data.data);
 export const disputeSwap     = (id, reason) => client.patch(`/swaps/${id}/dispute`, { reason }).then(r => r.data.data);

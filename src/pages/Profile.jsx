@@ -105,7 +105,7 @@ function SectionListings({ listings }) {
     <div className="space-y-5">
       <div className="flex items-start justify-between">
         <SectionHeader title="My Listings" desc={`${listings?.length || 0} listing${listings?.length !== 1 ? 's' : ''}`} />
-        <Link to="/create-listing">
+        <Link to="/create">
           <Button size="sm"><Plus size={14} /> New Listing</Button>
         </Link>
       </div>
@@ -118,7 +118,7 @@ function SectionListings({ listings }) {
           </div>
           <p className="font-semibold text-gray-500 mb-1">No listings yet</p>
           <p className="text-sm text-gray-400 mb-4">List something you want to swap</p>
-          <Link to="/create-listing">
+          <Link to="/create">
             <Button size="sm"><Plus size={14} /> Create Listing</Button>
           </Link>
         </div>
@@ -687,7 +687,7 @@ export default function Profile() {
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2 px-1">
               <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
-              <Link to="/create-listing" className="text-xs text-primary font-medium flex items-center gap-1">
+              <Link to="/create" className="text-xs text-primary font-medium flex items-center gap-1">
                 <Plus size={12} /> New
               </Link>
             </div>
@@ -702,7 +702,7 @@ export default function Profile() {
                 )}
               </div>
             ) : (
-              <Link to="/create-listing" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
+              <Link to="/create" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
                 <span className="text-sm text-gray-500">No listings yet — create your first</span>
                 <ChevronRight size={15} className="text-gray-300" />
               </Link>

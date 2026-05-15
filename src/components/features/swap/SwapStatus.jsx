@@ -3,7 +3,7 @@ import Badge from '../../ui/Badge';
 const STATUS_CONFIG = {
   proposed: { label: 'Proposed', variant: 'info' },
   accepted: { label: 'Accepted', variant: 'success' },
-  meetup_set: { label: 'Meetup Set', variant: 'accent' },
+  shipped: { label: 'Shipped', variant: 'accent' },
   in_escrow: { label: 'In Escrow', variant: 'warning' },
   completed: { label: 'Completed', variant: 'success' },
   cancelled: { label: 'Cancelled', variant: 'default' },

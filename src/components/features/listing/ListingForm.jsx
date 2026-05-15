@@ -2,43 +2,72 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useRef, useState, useEffect } from 'react';
-import { ImagePlus, X, Star } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ImagePlus, X, Star, ChevronDown } from 'lucide-react';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
+import { getCategories } from '../../../api/categories.api';
 
 const MAX_IMAGES = 8;
 
+const NIGERIAN_STATES = [
+  'Abia','Adamawa','Akwa Ibom','Anambra','Bauchi','Bayelsa','Benue','Borno',
+  'Cross River','Delta','Ebonyi','Edo','Ekiti','Enugu','FCT - Abuja','Gombe',
+  'Imo','Jigawa','Kaduna','Kano','Katsina','Kebbi','Kogi','Kwara','Lagos',
+  'Nasarawa','Niger','Ogun','Ondo','Osun','Oyo','Plateau','Rivers','Sokoto',
+  'Taraba','Yobe','Zamfara',
+];
+
 const schema = z.object({
-  title: z.string().min(3, 'Title too short').max(200),
-  description: z.string().min(10, 'Description too short'),
-  listingType: z.enum(['goods', 'services', 'both']),
-  condition: z.enum(['new', 'like_new', 'good', 'fair', 'poor']).optional(),
-  estimatedValue: z.coerce.number().min(0).optional(),
-  minSwapValue: z.coerce.number().min(0).optional(),
-  wantsTitle: z.string().optional(),
-  wantsDescription: z.string().optional(),
-  locationState: z.string().optional(),
-  locationLga: z.string().optional(),
-  meetupOption: z.boolean().default(true),
-  deliveryOption: z.boolean().default(false),
+  title:              z.string().min(3, 'Title must be at least 3 characters').max(200),
+  description:        z.string().min(10, 'Description must be at least 10 characters'),
+  categoryId:         z.string().optional(),
+  listingType:        z.enum(['goods', 'services', 'both']),
+  condition:          z.enum(['new', 'like_new', 'good', 'fair', 'poor']).optional(),
+  estimatedValue:     z.coerce.number().min(0, 'Must be 0 or more').optional(),
+  minSwapValue:       z.coerce.number().min(0).optional(),
+  wantsTitle:         z.string().max(200).optional(),
+  wantsCategoryId:    z.string().optional(),
+  wantsDescription:   z.string().optional(),
+  wantsValueMin:      z.coerce.number().min(0).optional(),
+  wantsValueMax:      z.coerce.number().min(0).optional(),
+  locationState:      z.string().optional(),
+  locationLga:        z.string().optional(),
+  locationArea:       z.string().optional(),
 });
+
+const SelectField = ({ label, error, children, ...props }) => (
+  <div className="space-y-1">
+    {label && <label className="block text-sm font-medium text-ink">{label}</label>}
+    <div className="relative">
+      <select
+        className={`input-field appearance-none pr-9 ${error ? 'border-red-400 focus:border-red-400 focus:ring-red-100' : ''}`}
+        {...props}
+      >
+        {children}
+      </select>
+      <ChevronDown size={15} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+    </div>
+    {error && <p className="text-xs text-red-500">{error}</p>}
+  </div>
+);
 
 function ListingForm({ onSubmit, loading, defaultValues }) {
   const { register, handleSubmit, watch, formState: { errors } } = useForm({
     resolver: zodResolver(schema),
-    defaultValues: {
-      listingType: 'goods',
-      meetupOption: true,
-      deliveryOption: false,
-      ...defaultValues,
-    },
+    defaultValues: { listingType: 'goods', ...defaultValues },
   });
 
   const listingType = watch('listingType');
   const fileInputRef = useRef(null);
-  const [images, setImages] = useState([]); // [{ file: File, preview: string }]
+  const [images, setImages] = useState([]);
 
-  // Revoke object URLs on unmount to avoid memory leaks
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: getCategories,
+    staleTime: Infinity,
+  });
+
   useEffect(() => {
     return () => images.forEach(img => URL.revokeObjectURL(img.preview));
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -52,7 +81,7 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
       preview: URL.createObjectURL(file),
     }));
     setImages(prev => [...prev, ...toAdd]);
-    e.target.value = ''; // allow re-selecting the same file
+    e.target.value = '';
   };
 
   const removeImage = (index) => {
@@ -62,7 +91,6 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
     });
   };
 
-  // Drag-and-drop
   const handleDrop = (e) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
@@ -82,7 +110,7 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
   return (
     <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-5">
 
-      {/* ── Image Upload ── */}
+      {/* ── Photos ── */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <label className="text-sm font-semibold text-ink">Photos</label>
@@ -96,22 +124,15 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
           onDragOver={e => e.preventDefault()}
           onDrop={handleDrop}
         >
-          {/* Filled slots */}
           {images.map((img, i) => (
             <div key={img.preview} className="relative aspect-square rounded-2xl overflow-hidden bg-gray-100 group">
-              <img
-                src={img.preview}
-                alt={`preview-${i}`}
-                className="w-full h-full object-cover"
-              />
-              {/* Cover badge */}
+              <img src={img.preview} alt={`preview-${i}`} className="w-full h-full object-cover" />
               {i === 0 && (
                 <div className="absolute bottom-1.5 left-1.5 flex items-center gap-0.5 bg-black/60 text-white text-[10px] font-semibold px-1.5 py-0.5 rounded-md">
                   <Star size={8} fill="currentColor" />
                   Cover
                 </div>
               )}
-              {/* Remove button */}
               <button
                 type="button"
                 onClick={() => removeImage(i)}
@@ -122,15 +143,14 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
             </div>
           ))}
 
-          {/* Add slot */}
           {images.length < MAX_IMAGES && (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               className={`aspect-square rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-1.5 transition
                 ${images.length === 0
-                  ? 'col-span-2 row-span-2 border-gray-200 hover:border-primary hover:bg-primary/3'
-                  : 'border-gray-200 hover:border-primary hover:bg-primary/3'
+                  ? 'col-span-2 row-span-2 border-gray-200 hover:border-primary hover:bg-primary/5'
+                  : 'border-gray-200 hover:border-primary hover:bg-primary/5'
                 }`}
             >
               <ImagePlus size={images.length === 0 ? 28 : 20} className="text-gray-300" />
@@ -152,117 +172,198 @@ function ListingForm({ onSubmit, loading, defaultValues }) {
           className="hidden"
           onChange={handleFileChange}
         />
-
-        <p className="text-xs text-gray-400 mt-2">
-          First photo is the cover · JPG, PNG or WebP · Max 5 MB each
-        </p>
+        <p className="text-xs text-gray-400 mt-2">First photo is the cover · JPG, PNG or WebP · Max 5 MB each</p>
       </div>
 
-      {/* ── Listing type ── */}
-      <div>
-        <label className="block text-sm font-semibold text-ink mb-1">What are you listing?</label>
-        <select {...register('listingType')} className="input-field">
-          <option value="goods">Physical Item (Goods)</option>
-          <option value="services">Service / Skill</option>
-          <option value="both">Both Item & Service</option>
-        </select>
-      </div>
+      {/* ── What are you listing? ── */}
+      <SelectField label="What are you listing?" {...register('listingType')}>
+        <option value="goods">Physical Item (Goods)</option>
+        <option value="services">Service / Skill</option>
+        <option value="both">Both Item & Service</option>
+      </SelectField>
 
+      {/* ── Category ── */}
+      <SelectField
+        label="Category"
+        error={errors.categoryId?.message}
+        {...register('categoryId')}
+      >
+        <option value="">Select a category</option>
+        {categories.map(cat => (
+          <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</option>
+        ))}
+      </SelectField>
+
+      {/* ── Title ── */}
       <Input
         label="Title"
-        placeholder="e.g. Samsung Galaxy S21"
+        placeholder="e.g. Samsung Galaxy S21 Ultra"
         error={errors.title?.message}
         {...register('title')}
       />
 
-      <div>
-        <label className="block text-sm font-semibold text-ink mb-1">Description</label>
+      {/* ── Description ── */}
+      <div className="space-y-1">
+        <label className="block text-sm font-medium text-ink">Description</label>
         <textarea
           {...register('description')}
-          placeholder="Describe your item or service in detail..."
+          placeholder="Describe your item or service — brand, size, specs, any defects..."
           rows={4}
           className={`input-field resize-none ${errors.description ? 'border-red-400' : ''}`}
         />
-        {errors.description && <p className="text-xs text-red-500 mt-1">{errors.description.message}</p>}
+        {errors.description && <p className="text-xs text-red-500">{errors.description.message}</p>}
       </div>
 
+      {/* ── Condition (goods only) ── */}
       {listingType !== 'services' && (
-        <div>
-          <label className="block text-sm font-semibold text-ink mb-1">Condition</label>
-          <select {...register('condition')} className="input-field">
-            <option value="">Select condition</option>
-            <option value="new">New</option>
-            <option value="like_new">Like New</option>
-            <option value="good">Good</option>
-            <option value="fair">Fair</option>
-            <option value="poor">Poor</option>
-          </select>
-        </div>
+        <SelectField
+          label="Condition"
+          error={errors.condition?.message}
+          {...register('condition')}
+        >
+          <option value="">Select condition</option>
+          <option value="new">New</option>
+          <option value="like_new">Like New</option>
+          <option value="good">Good</option>
+          <option value="fair">Fair</option>
+          <option value="poor">Poor</option>
+        </SelectField>
       )}
 
-      <Input
-        label="Estimated Value (BC)"
-        type="number"
-        placeholder="e.g. 50000"
-        prefix="BC"
-        error={errors.estimatedValue?.message}
-        {...register('estimatedValue')}
-      />
-
-      <div>
-        <Input
-          label="Minimum Swap Value (BC)"
-          type="number"
-          placeholder="Leave blank — no restriction"
-          prefix="BC"
-          error={errors.minSwapValue?.message}
-          {...register('minSwapValue')}
-        />
-        <p className="text-xs text-gray-400 mt-1">Only proposers whose item is worth at least this much can swap with you</p>
-      </div>
-
-      <div className="border-t pt-4">
-        <h3 className="font-semibold text-sm mb-3 text-gray-600">What do you want in return?</h3>
-        <Input
-          label="Looking for"
-          placeholder="e.g. iPhone 13 or similar"
-          {...register('wantsTitle')}
-        />
-        <div className="mt-3">
-          <label className="block text-sm font-semibold text-ink mb-1">More details (optional)</label>
-          <textarea
-            {...register('wantsDescription')}
-            placeholder="Describe what you're looking to receive..."
-            rows={2}
-            className="input-field resize-none"
-          />
+      {/* ── Value ── */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-ink">Estimated Value</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 text-gray-500 text-sm font-medium select-none">₦</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="50000"
+              className={`input-field pl-8 ${errors.estimatedValue ? 'border-red-400' : ''}`}
+              {...register('estimatedValue')}
+            />
+          </div>
+          {errors.estimatedValue && <p className="text-xs text-red-500">{errors.estimatedValue.message}</p>}
+        </div>
+        <div className="space-y-1">
+          <label className="block text-sm font-medium text-ink">Min. Swap Value</label>
+          <div className="relative flex items-center">
+            <span className="absolute left-3 text-gray-500 text-sm font-medium select-none">₦</span>
+            <input
+              type="number"
+              min="0"
+              placeholder="Any"
+              className="input-field pl-8"
+              {...register('minSwapValue')}
+            />
+          </div>
+          <p className="text-xs text-gray-400">Min value a swapper's item must have</p>
         </div>
       </div>
 
+      {/* ── Location ── */}
       <div>
-        <label className="block text-sm font-semibold text-ink mb-1">State</label>
-        <Input placeholder="e.g. Lagos" {...register('locationState')} />
+        <p className="text-sm font-semibold text-ink mb-2">Your Location</p>
+        <div className="space-y-3">
+          <SelectField
+            label="State"
+            error={errors.locationState?.message}
+            {...register('locationState')}
+          >
+            <option value="">Select state</option>
+            {NIGERIAN_STATES.map(s => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </SelectField>
+          <div className="grid grid-cols-2 gap-3">
+            <Input
+              label="LGA"
+              placeholder="e.g. Ikeja"
+              error={errors.locationLga?.message}
+              {...register('locationLga')}
+            />
+            <Input
+              label="Area / Neighbourhood"
+              placeholder="e.g. Allen Ave"
+              error={errors.locationArea?.message}
+              {...register('locationArea')}
+            />
+          </div>
+        </div>
       </div>
 
-      <div>
-        <label className="block text-sm font-semibold text-ink mb-1">LGA / Area</label>
-        <Input placeholder="e.g. Ikeja" {...register('locationLga')} />
+      {/* ── What do you want in return? ── */}
+      <div className="border-t pt-5">
+        <p className="text-sm font-semibold text-ink mb-3">What do you want in return?</p>
+        <div className="space-y-3">
+          <Input
+            label="What you're looking for"
+            placeholder="e.g. iPhone 13, MacBook Pro, Tailoring services..."
+            {...register('wantsTitle')}
+          />
+
+          <SelectField
+            label="Preferred category (optional)"
+            {...register('wantsCategoryId')}
+          >
+            <option value="">Any category</option>
+            {categories.map(cat => (
+              <option key={cat.id} value={cat.id}>{cat.icon ? `${cat.icon} ` : ''}{cat.name}</option>
+            ))}
+          </SelectField>
+
+          <div className="space-y-1">
+            <label className="block text-sm font-medium text-ink">More details (optional)</label>
+            <textarea
+              {...register('wantsDescription')}
+              placeholder="Any specific requirements, brand preference, condition..."
+              rows={2}
+              className="input-field resize-none"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-ink">Min value (₦)</label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-gray-500 text-sm font-medium select-none">₦</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  className="input-field pl-8"
+                  {...register('wantsValueMin')}
+                />
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="block text-sm font-medium text-ink">Max value (₦)</label>
+              <div className="relative flex items-center">
+                <span className="absolute left-3 text-gray-500 text-sm font-medium select-none">₦</span>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="Any"
+                  className="input-field pl-8"
+                  {...register('wantsValueMax')}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="flex gap-4">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register('meetupOption')} className="rounded" />
-          Meetup OK
-        </label>
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register('deliveryOption')} className="rounded" />
-          Delivery OK
-        </label>
+      {/* ── Delivery notice ── */}
+      <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-xl px-3 py-2.5">
+        <span>🚚</span>
+        <span>All swaps are delivered — you'll add shipment details after a swap is accepted.</span>
       </div>
 
       <Button type="submit" fullWidth loading={loading}>
-        {defaultValues ? 'Update Listing' : 'Create Listing'}
+        {defaultValues ? 'Update Listing' : 'Post Listing'}
       </Button>
+
     </form>
   );
 }

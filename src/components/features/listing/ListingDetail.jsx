@@ -1,11 +1,11 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield, MessageCircle, Pencil, ImageOff } from 'lucide-react';
+import { MapPin, Eye, Repeat2, Zap, LayoutGrid, Shield, MessageCircle, Pencil } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Badge from '../../ui/Badge';
 import Avatar from '../../ui/Avatar';
 import Button from '../../ui/Button';
-import { IMAGE_FALLBACK_SRC, resolveImageUrl } from '../../../utils/placeholder';
+import { IMAGE_FALLBACK_SRC, resolveImageUrl, getListingPlaceholder } from '../../../utils/placeholder';
 import { getPublicProfile } from '../../../api/users.api';
 import { startConversation } from '../../../api/messages.api';
 
@@ -41,18 +41,12 @@ function OwnerListings({ ownerId, currentListingId }) {
               to={`/listing/${l.id}`}
               className="flex-none w-36 lg:w-auto bg-white rounded-2xl overflow-hidden border border-gray-100 hover:shadow-sm transition"
             >
-              {l.images?.[0] ? (
-                <img
-                  src={resolveImageUrl(l.images[0])}
-                  alt={l.title}
-                  className="w-full h-24 object-cover"
-                  onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
-                />
-              ) : (
-                <div className="w-full h-24 bg-gray-100 flex items-center justify-center">
-                  <ImageOff size={18} className="text-gray-300" />
-                </div>
-              )}
+              <img
+                src={resolveImageUrl(l.images?.[0]) || getListingPlaceholder(l)}
+                alt={l.title}
+                className="w-full h-24 object-cover"
+                onError={(e) => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
+              />
               <div className="p-2">
                 <p className="text-xs font-semibold truncate">{l.title}</p>
                 {l.estimatedValue && (
@@ -70,6 +64,7 @@ function OwnerListings({ ownerId, currentListingId }) {
 
 function ListingDetail({ listing, onSwap, currentUserId }) {
   const isOwner = listing.userId?.id === currentUserId;
+  const placeholder = getListingPlaceholder(listing, 600, 400);
 
   return (
     <div className="space-y-4">
@@ -87,10 +82,7 @@ function ListingDetail({ listing, onSwap, currentUserId }) {
           ))}
         </div>
       ) : (
-        <div className="w-full h-56 rounded-2xl bg-gray-100 flex flex-col items-center justify-center gap-2">
-          <ImageOff size={36} className="text-gray-300" />
-          <span className="text-sm text-gray-300 font-medium">No photos added</span>
-        </div>
+        <img src={placeholder} alt={listing.title} className="w-full h-56 object-cover rounded-2xl" />
       )}
 
       {/* Main info */}

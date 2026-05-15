@@ -26,7 +26,8 @@ export default function Onboarding() {
   const [devCode, setDevCode] = useState(null);
 
   // Email/password state
-  const [form, setForm]     = useState({ email: '', password: '', fullName: '', confirmPassword: '' });
+  const [form, setForm]     = useState({ email: '', password: '', fullName: '', confirmPassword: '', phone: '+234' });
+  const [pushEnabled, setPushEnabled] = useState(false);
 
   const {
     sendOtpAsync, isSendingOtp,
@@ -55,6 +56,15 @@ export default function Onboarding() {
     try { await loginEmailAsync({ email: form.email, password: form.password }); } catch {}
   };
 
+  const handlePushToggle = async (checked) => {
+    if (checked && 'Notification' in window) {
+      const permission = await Notification.requestPermission();
+      setPushEnabled(permission === 'granted');
+    } else {
+      setPushEnabled(checked);
+    }
+  };
+
   const handleRegister = async () => {
     if (form.password !== form.confirmPassword) {
       const { toast } = await import('react-hot-toast');
@@ -62,7 +72,9 @@ export default function Onboarding() {
       return;
     }
     try {
-      await registerAsync({ email: form.email, password: form.password, fullName: form.fullName });
+      const payload = { email: form.email, password: form.password, fullName: form.fullName };
+      if (form.phone && form.phone !== '+234') payload.phone = form.phone;
+      await registerAsync(payload);
     } catch {}
   };
 
@@ -190,6 +202,30 @@ export default function Onboarding() {
               <Input label="Confirm Password" type="password"
                 value={form.confirmPassword} onChange={setField('confirmPassword')}
                 placeholder="Repeat password" />
+              <Input label="Phone Number (optional)" type="tel" value={form.phone}
+                onChange={setField('phone')} placeholder="+2348012345678" />
+              <label className="flex items-start gap-3 cursor-pointer select-none">
+                <div className="relative mt-0.5 flex-shrink-0">
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={pushEnabled}
+                    onChange={(e) => handlePushToggle(e.target.checked)}
+                  />
+                  <div className="w-5 h-5 rounded border-2 border-gray-300 peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-colors">
+                    {pushEnabled && (
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </div>
+                </div>
+                <span className="text-sm text-gray-600">
+                  <span className="font-medium text-ink">Enable push notifications</span>
+                  <br />
+                  <span className="text-xs text-gray-400">Get alerts for new matches, swap updates, and messages</span>
+                </span>
+              </label>
               <Button fullWidth loading={isRegistering} onClick={handleRegister}>
                 Create Account
               </Button>

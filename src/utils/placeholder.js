@@ -2,7 +2,7 @@
 export const IMAGE_FALLBACK_SRC =
   "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 3'%3E%3Crect width='4' height='3' fill='%23f3f4f6'/%3E%3C/svg%3E";
 
-const API_ORIGIN = import.meta.env.VITE_API_URL || '';
+const API_ORIGIN = import.meta.env.VITE_API_URL || 'https://swapnigeria-production.up.railway.app';
 
 /**
  * Resolve a stored image URL to an absolute URL.

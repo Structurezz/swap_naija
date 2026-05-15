@@ -6,11 +6,11 @@
   VITE_API_URL = "https://swapnigeria-production.up.railway.app"
   VITE_SOCKET_URL = "https://swapnigeria-production.up.railway.app"
 
-# Proxy /api/files/* to Railway so stored relative image URLs work on Netlify
+# Redirect /api/files/* to Railway (301 so browser follows directly)
 [[redirects]]
   from = "/api/files/*"
   to = "https://swapnigeria-production.up.railway.app/api/files/:splat"
-  status = 200
+  status = 301
   force = true
 
 # Proxy all other /api/* calls to Railway backend

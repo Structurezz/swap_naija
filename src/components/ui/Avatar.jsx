@@ -1,4 +1,9 @@
+import { useState } from 'react';
+import { resolveImageUrl } from '../../utils/placeholder';
+
 function Avatar({ src, name, size = 'md', className = '' }) {
+  const [imgError, setImgError] = useState(false);
+
   const sizes = {
     xs: 'w-6 h-6 text-xs',
     sm: 'w-8 h-8 text-sm',
@@ -14,12 +19,15 @@ function Avatar({ src, name, size = 'md', className = '' }) {
   const colors = ['bg-primary', 'bg-accent', 'bg-blue-500', 'bg-purple-500', 'bg-pink-500'];
   const colorIdx = name ? name.charCodeAt(0) % colors.length : 0;
 
-  if (src) {
+  const resolvedSrc = resolveImageUrl(src);
+
+  if (resolvedSrc && !imgError) {
     return (
       <img
-        src={src}
+        src={resolvedSrc}
         alt={name || 'Avatar'}
         className={`${sizes[size]} rounded-full object-cover flex-shrink-0 ${className}`}
+        onError={() => setImgError(true)}
       />
     );
   }

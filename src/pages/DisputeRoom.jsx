@@ -371,10 +371,11 @@ function LawyerDirectoryModal({ roomId, onClose }) {
   const [selectedLawyer, setLawyer] = useState(null);
   const [feeInput, setFeeInput]     = useState('');
 
-  const { data: lawyers = [], isLoading } = useQuery({
+  const { data: lawyersData, isLoading } = useQuery({
     queryKey: ['lawyers', specialization],
     queryFn: () => findLawyers({ specialization: specialization || undefined, limit: 50 }),
   });
+  const lawyers = Array.isArray(lawyersData) ? lawyersData : (lawyersData?.lawyers ?? []);
 
   const hireMutation = useMutation({
     mutationFn: () => requestCounsel(roomId, selectedLawyer.id, Math.round(parseFloat(feeInput || '0') * 100)),

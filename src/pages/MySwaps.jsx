@@ -51,6 +51,7 @@ const TABS = [
   { value: 'accepted',  label: 'Accepted' },
   { value: 'in_escrow', label: 'In Escrow' },
   { value: 'shipped',   label: 'Shipped' },
+  { value: 'disputed',  label: '⚖️ Disputed' },
   { value: 'completed', label: 'Done' },
 ];
 

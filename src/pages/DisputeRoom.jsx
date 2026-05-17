@@ -209,7 +209,7 @@ function CounselMsg({ msg }) {
         <div className="flex items-center gap-2 mb-1">
           <span className={`text-xs font-semibold ${color}`}>{msg.senderName}</span>
           <span className={`text-xs px-1.5 rounded ${badge}`}>
-            {isClaimantCounsel ? 'Claimant's Counsel' : 'Respondent's Counsel'}
+            {isClaimantCounsel ? "Claimant's Counsel" : "Respondent's Counsel"}
           </span>
           <span className="text-xs text-gray-400">{format(new Date(msg.createdAt), 'HH:mm')}</span>
         </div>

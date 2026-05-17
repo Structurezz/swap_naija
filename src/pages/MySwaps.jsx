@@ -454,12 +454,13 @@ export default function MySwaps() {
   const [reviewTarget, setReviewTarget] = useState(null); // { swap, otherUser }
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewComment, setReviewComment] = useState('');
+  const [expandedSwapId, setExpandedSwapId] = useState(null);
   const qc = useQueryClient();
 
   const { data: swapData, isLoading } = useQuery({
     queryKey: ['swaps', tab, page],
     queryFn: () => getMySwaps(tab || undefined, page),
-    keepPreviousData: true,
+    placeholderData: (prev) => prev,
   });
 
   // Support both old (plain array) and new (paginated object) backend responses
@@ -662,8 +663,9 @@ export default function MySwaps() {
         <TabStrip />
       </div>
 
-      {/* ── Mobile tab strip ── */}
+      {/* ── Mobile header ── */}
       <div className="lg:hidden px-4 pt-14 pb-2">
+        <h1 className="text-xl font-display font-bold text-ink mb-3">My Swaps {total > 0 && <span className="text-sm font-normal text-gray-400">({total})</span>}</h1>
         <TabStrip />
       </div>
 
@@ -684,19 +686,91 @@ export default function MySwaps() {
           {/* ── Left panel: swap list ── */}
           <div className="lg:border-r lg:border-gray-100 lg:flex lg:flex-col" style={{ minHeight: 0 }}>
 
-            {/* Mobile: full-detail cards */}
-            <div className="lg:hidden px-4 pb-4 space-y-3">
-              {swaps.map(swap => (
-                <div key={swap.id} className="card space-y-2">
-                  <SwapDetail swap={swap} {...sharedDetailProps} isDesktop={false} />
-                </div>
-              ))}
+            {/* Mobile: expandable summary cards */}
+            <div className="lg:hidden px-4 pb-4 space-y-2.5">
+              {swaps.map(swap => {
+                const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
+                const isExpanded   = expandedSwapId === swap.id;
+                const isInitiator  = swap.initiatorId?.id === user?.id;
+                const myParty      = isInitiator ? 'initiator' : 'receiver';
+
+                const pendingActions = [
+                  swap.status === 'proposed' && !isInitiator,
+                  ['accepted', 'in_escrow'].includes(swap.status) && !swap[`${myParty}AddressSet`],
+                  swap.status === 'in_escrow' && !swap[`${myParty}Shipped`],
+                  ['in_escrow', 'shipped'].includes(swap.status) && !(isInitiator ? swap.initiatorConfirmed : swap.receiverConfirmed),
+                  swap.status === 'accepted' && !(isInitiator ? swap.initiatorDepositPaid : swap.receiverDepositPaid),
+                ].filter(Boolean).length;
+
+                return (
+                  <div key={swap.id} className="bg-white rounded-2xl shadow-card overflow-hidden">
+                    {/* Summary row — tap to expand */}
+                    <button
+                      className="w-full text-left"
+                      onClick={() => setExpandedSwapId(isExpanded ? null : swap.id)}
+                    >
+                      <div className="flex items-start gap-2 px-4 pt-4 pb-3">
+                        <div className="flex-1 min-w-0 space-y-1.5">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <SwapStatus status={swap.status} />
+                            <span className="text-xs text-gray-400 bg-gray-50 px-2 py-0.5 rounded-full whitespace-nowrap">
+                              {swapTypeMeta.icon} {swapTypeMeta.label}
+                            </span>
+                          </div>
+                          <p className="text-sm font-semibold text-ink">
+                            {(swap.initiatorId?.fullName || '—').split(' ')[0]} ↔ {(swap.receiverId?.fullName || '—').split(' ')[0]}
+                          </p>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-xs text-gray-400">
+                              {new Date(swap.updatedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short' })}
+                            </span>
+                            {swap.status === 'disputed' && (
+                              <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">⚖️ In mediation</span>
+                            )}
+                            {swap.status !== 'disputed' && pendingActions > 0 && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">
+                                {pendingActions} action{pendingActions > 1 ? 's' : ''} needed
+                              </span>
+                            )}
+                            {swap.status === 'completed' && (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">✓ Completed</span>
+                            )}
+                          </div>
+                        </div>
+                        <ChevronRight
+                          size={18}
+                          className={`text-gray-300 flex-none mt-1 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}
+                        />
+                      </div>
+                    </button>
+
+                    {/* Disputed: court room CTA visible even when collapsed */}
+                    {swap.status === 'disputed' && !isExpanded && (
+                      <div className="px-4 pb-3">
+                        <button
+                          onClick={() => navigate(`/dispute/${swap.id}`)}
+                          className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-xl transition-colors active:scale-95"
+                        >
+                          ⚖️ Enter Court Room
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Expanded full detail */}
+                    {isExpanded && (
+                      <div className="border-t border-gray-100 px-4 py-3">
+                        <SwapDetail swap={swap} {...sharedDetailProps} isDesktop={false} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
 
               {/* Mobile pagination */}
               {totalPages > 1 && (
                 <div className="flex items-center justify-between pt-2 pb-4">
                   <button
-                    onClick={() => { setPage(p => p - 1); window.scrollTo(0, 0); }}
+                    onClick={() => { setPage(p => p - 1); setExpandedSwapId(null); window.scrollTo(0, 0); }}
                     disabled={page === 1}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
                   >
@@ -706,7 +780,7 @@ export default function MySwaps() {
                     Page {page} of {totalPages} · {total} swaps
                   </span>
                   <button
-                    onClick={() => { setPage(p => p + 1); window.scrollTo(0, 0); }}
+                    onClick={() => { setPage(p => p + 1); setExpandedSwapId(null); window.scrollTo(0, 0); }}
                     disabled={page === totalPages}
                     className="flex items-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed"
                   >

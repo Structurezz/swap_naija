@@ -210,6 +210,7 @@ function ConfirmPanel({ swap, userId }) {
 
 // ─── Swap detail body — shared by mobile inline and desktop right panel ───────
 function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, topUpMutation, messageMutation, onAction, onReview, isDesktop }) {
+  const navigate     = useNavigate();
   const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
   const isInvolved   = swap.initiatorId?.id === user?.id || swap.receiverId?.id === user?.id;
 
@@ -269,13 +270,21 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
 
       {/* Dispute info */}
       {swap.status === 'disputed' && (
-        <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2 space-y-1">
+        <div className="bg-red-50 border border-red-100 rounded-xl px-3 py-2.5 space-y-2">
           <div className="flex items-center gap-1.5">
             <AlertTriangle size={13} className="text-red-500" />
-            <p className="text-xs font-semibold text-red-700">Dispute under review</p>
+            <p className="text-xs font-semibold text-red-700">Dispute under mediation</p>
           </div>
-          <p className="text-xs text-red-600">{swap.disputeReason}</p>
-          <p className="text-xs text-gray-400">SwapNaija team will contact both parties within 24 hours. Escrow funds are frozen.</p>
+          {swap.disputeReason && (
+            <p className="text-xs text-red-600 italic">"{swap.disputeReason}"</p>
+          )}
+          <p className="text-xs text-gray-400">Escrow funds are frozen. ARIA AI mediator is presiding over this case.</p>
+          <button
+            onClick={() => navigate(`/dispute/${swap.id}`)}
+            className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-2 rounded-xl transition-colors active:scale-95"
+          >
+            ⚖️ Enter Court Room
+          </button>
         </div>
       )}
 

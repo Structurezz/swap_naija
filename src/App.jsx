@@ -24,6 +24,7 @@ import VerifyAccount from './pages/VerifyAccount';
 import InviteEarn from './pages/InviteEarn';
 import BoostListing from './pages/BoostListing';
 import EditListing from './pages/EditListing';
+import DisputeRoom from './pages/DisputeRoom';
 import { useAuthStore } from './store/auth.store';
 import SplashScreen from './components/ui/SplashScreen';
 
@@ -44,6 +45,8 @@ function App() {
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route element={<ProtectedRoute />}>
+            {/* Full-screen route — no AppShell wrapper */}
+            <Route path="/dispute/:swapId" element={<DisputeRoom />} />
             <Route element={<AppShell />}>
               <Route path="/" element={<Home />} />
               <Route path="/search" element={<Search />} />

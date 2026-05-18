@@ -14,8 +14,8 @@ const BENEFITS = [
 
 export default function BoostSelect() {
   const { data, isLoading } = useQuery({
-    queryKey: ['my-listings', 'active'],
-    queryFn: () => getMyListings('active'),
+    queryKey: ['my-listings'],
+    queryFn: () => getMyListings(),
   });
 
   const listings = data?.listings ?? data ?? [];

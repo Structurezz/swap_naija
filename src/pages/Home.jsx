@@ -449,9 +449,14 @@ export default function Home() {
               <p className="text-sm text-gray-500">Hello, {firstName} 👋</p>
               <h1 className="font-display font-bold text-xl">What will you swap today?</h1>
             </div>
-            <Link to="/profile">
-              <Avatar src={user?.avatarUrl} name={user?.fullName} size="md" />
-            </Link>
+            <div className="flex items-center gap-2">
+              <Link to="/wallet" className="w-10 h-10 flex items-center justify-center rounded-2xl bg-gray-100 hover:bg-gray-200 transition border border-gray-200">
+                <Wallet size={20} className="text-gray-700" />
+              </Link>
+              <Link to="/profile">
+                <Avatar src={user?.avatarUrl} name={user?.fullName} size="md" />
+              </Link>
+            </div>
           </div>
           <Link to="/search" className="flex items-center gap-2 bg-gray-100 rounded-2xl px-4 py-3 text-gray-400">
             <SearchIcon size={18} />

@@ -24,6 +24,17 @@ export function useAuth() {
     onError: (err) => toast.error(err.response?.data?.error || 'Invalid OTP'),
   });
 
+  const sendEmailOtpMutation = useMutation({
+    mutationFn: (email) => authApi.sendEmailOtp(email),
+    onError: (err) => toast.error(err.response?.data?.error || 'Failed to send OTP'),
+  });
+
+  const verifyEmailOtpMutation = useMutation({
+    mutationFn: ({ email, code }) => authApi.verifyEmailOtp(email, code),
+    onSuccess: (data) => onAuthSuccess(data),
+    onError: (err) => toast.error(err.response?.data?.error || 'Invalid or expired OTP'),
+  });
+
   const registerMutation = useMutation({
     mutationFn: (data) => authApi.register(data),
     onSuccess: (data) => onAuthSuccess(data),
@@ -33,6 +44,11 @@ export function useAuth() {
   const loginEmailMutation = useMutation({
     mutationFn: (data) => authApi.loginEmail(data),
     onSuccess: (data) => onAuthSuccess(data),
+    onError: (err) => toast.error(err.response?.data?.error || 'Login failed'),
+  });
+
+  const loginOtpMutation = useMutation({
+    mutationFn: (data) => authApi.loginOtp(data),
     onError: (err) => toast.error(err.response?.data?.error || 'Login failed'),
   });
 
@@ -76,12 +92,21 @@ export function useAuth() {
     verifyOtp: verifyOtpMutation.mutate,
     verifyOtpAsync: verifyOtpMutation.mutateAsync,
     isVerifying: verifyOtpMutation.isPending,
+    sendEmailOtp: sendEmailOtpMutation.mutate,
+    sendEmailOtpAsync: sendEmailOtpMutation.mutateAsync,
+    isSendingEmailOtp: sendEmailOtpMutation.isPending,
+    verifyEmailOtp: verifyEmailOtpMutation.mutate,
+    verifyEmailOtpAsync: verifyEmailOtpMutation.mutateAsync,
+    isVerifyingEmailOtp: verifyEmailOtpMutation.isPending,
     register: registerMutation.mutate,
     registerAsync: registerMutation.mutateAsync,
     isRegistering: registerMutation.isPending,
     loginEmail: loginEmailMutation.mutate,
     loginEmailAsync: loginEmailMutation.mutateAsync,
     isLoggingIn: loginEmailMutation.isPending,
+    loginOtp: loginOtpMutation.mutate,
+    loginOtpAsync: loginOtpMutation.mutateAsync,
+    isLoginOtpPending: loginOtpMutation.isPending,
     forgotPassword: forgotPasswordMutation.mutate,
     forgotPasswordAsync: forgotPasswordMutation.mutateAsync,
     isSendingReset: forgotPasswordMutation.isPending,

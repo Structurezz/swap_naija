@@ -7,11 +7,11 @@ import {
   ArrowLeft, Scale, Send, Loader2, AlertTriangle,
   FileImage, MessageCircle, HelpCircle, Gavel, ShieldCheck,
   Briefcase, Search, X, ChevronRight, Star, UserCheck,
-  Menu, ScrollText, Users, CheckCircle, BookOpen,
+  Menu, CheckCircle, BookOpen, Paperclip, FileText,
 } from 'lucide-react';
 import {
   getDisputeRoom, sendDisputeMessage,
-  findLawyers, requestCounsel,
+  findLawyers, requestCounsel, uploadEvidenceFile,
 } from '../api/dispute.api';
 import { useAuthStore } from '../store/auth.store';
 import { useSocket, getSocket } from '../hooks/useSocket';
@@ -99,6 +99,29 @@ const MSG_TYPES = [
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
+function MsgAttachment({ attachment }) {
+  if (!attachment?.url) return null;
+  if (attachment.isPdf) {
+    return (
+      <a
+        href={attachment.url} target="_blank" rel="noreferrer"
+        className="mt-2 flex items-center gap-2 text-[11px] text-amber-400 hover:text-amber-300 underline underline-offset-2 transition-colors"
+      >
+        <FileText size={12} className="flex-shrink-0" />
+        {attachment.filename || 'attachment.pdf'}
+      </a>
+    );
+  }
+  return (
+    <a href={attachment.url} target="_blank" rel="noreferrer" className="block mt-2">
+      <img
+        src={attachment.url} alt={attachment.filename || 'attachment'}
+        className="max-w-[220px] max-h-40 rounded-lg object-cover border border-slate-700/40 hover:opacity-90 transition-opacity"
+      />
+    </a>
+  );
+}
+
 function renderAriaContent(content) {
   return content.split('\n').map((line, i) => {
     const parts = line.split(/(\*\*[^*]+\*\*)/g);
@@ -280,6 +303,7 @@ function CounselMsg({ msg }) {
   const badgeCls = isClaim ? 'border-teal-800/50 bg-teal-900/30 text-teal-500' : 'border-emerald-800/50 bg-emerald-900/30 text-emerald-500';
   const bubbleCls= isClaim ? 'bg-teal-900/30 border-teal-800/40 text-teal-100' : 'bg-emerald-900/30 border-emerald-800/40 text-emerald-100';
   const dotCls   = isClaim ? 'bg-teal-900/60 border-teal-700/40 text-teal-400' : 'bg-emerald-900/60 border-emerald-700/40 text-emerald-400';
+  const att = msg.metadata?.attachment;
 
   return (
     <div className="flex gap-3 items-start max-w-[85%] msg-in">
@@ -292,10 +316,12 @@ function CounselMsg({ msg }) {
           <span className={`text-[9px] tracking-widest uppercase border px-1.5 py-0.5 rounded ${badgeCls}`}>
             {isClaim ? "Claimant's Counsel" : "Respondent's Counsel"}
           </span>
+          {att && <span className="text-[9px] tracking-widest uppercase border border-amber-900/40 bg-amber-950/30 text-amber-800 px-1.5 py-0.5 rounded flex items-center gap-1"><Paperclip size={7} />Evidence</span>}
           <span className="text-[9px] text-slate-600 font-mono">{format(new Date(msg.createdAt), 'HH:mm')}</span>
         </div>
         <div className={`border rounded-xl rounded-tl-sm px-4 py-2.5 text-sm shadow-sm ${bubbleCls}`}>
           {msg.content}
+          {att && <MsgAttachment attachment={att} />}
         </div>
       </div>
     </div>
@@ -308,6 +334,7 @@ function MyMsg({ msg }) {
     question: { cls: 'bg-purple-900/40 border-purple-800/40 text-purple-100', badge: 'Question' },
     text:     { cls: 'bg-slate-700/80 border-slate-600/40 text-slate-100', badge: null },
   }[msg.messageType] || { cls: 'bg-slate-700/80 border-slate-600/40 text-slate-100', badge: null };
+  const att = msg.metadata?.attachment;
 
   return (
     <div className="flex flex-col items-end msg-in">
@@ -317,10 +344,12 @@ function MyMsg({ msg }) {
             {cfg.badge}
           </span>
         )}
+        {att && <span className="text-[9px] tracking-widest uppercase border border-amber-900/50 bg-amber-950/40 text-amber-700 px-1.5 py-0.5 rounded flex items-center gap-1"><Paperclip size={7} />Evidence</span>}
         <span className="text-[9px] text-slate-600 font-mono">{format(new Date(msg.createdAt), 'HH:mm')}</span>
       </div>
       <div className={`border rounded-xl rounded-tr-sm px-4 py-2.5 text-sm shadow-sm max-w-[82%] ${cfg.cls}`}>
         {msg.content}
+        {att && <MsgAttachment attachment={att} />}
       </div>
     </div>
   );
@@ -330,6 +359,7 @@ function OtherPartyMsg({ msg, isClaimant }) {
   const accent  = isClaimant ? 'text-rose-400'  : 'text-sky-400';
   const dotCls  = isClaimant ? 'bg-rose-900/50 border-rose-800/40 text-rose-300' : 'bg-sky-900/50 border-sky-800/40 text-sky-300';
   const badgeCls= isClaimant ? 'border-rose-800/50 bg-rose-900/20 text-rose-500' : 'border-sky-800/50 bg-sky-900/20 text-sky-500';
+  const att = msg.metadata?.attachment;
 
   return (
     <div className="flex gap-3 items-start max-w-[85%] msg-in">
@@ -342,10 +372,12 @@ function OtherPartyMsg({ msg, isClaimant }) {
           <span className={`text-[9px] tracking-widest uppercase border px-1.5 py-0.5 rounded ${badgeCls}`}>
             {isClaimant ? 'Claimant' : 'Respondent'}
           </span>
+          {att && <span className="text-[9px] tracking-widest uppercase border border-amber-900/40 bg-amber-950/30 text-amber-800 px-1.5 py-0.5 rounded flex items-center gap-1"><Paperclip size={7} />Evidence</span>}
           <span className="text-[9px] text-slate-600 font-mono">{format(new Date(msg.createdAt), 'HH:mm')}</span>
         </div>
         <div className="bg-slate-800/80 border border-slate-700/50 text-slate-200 rounded-xl rounded-tl-sm px-4 py-2.5 text-sm">
           {msg.content}
+          {att && <MsgAttachment attachment={att} />}
         </div>
       </div>
     </div>
@@ -811,7 +843,9 @@ export default function DisputeRoom() {
   const [roomId, setRoomId]             = useState(null);
   const [showLawyers, setShowLawyers]   = useState(false);
   const [sidebarOpen, setSidebarOpen]   = useState(false);
-  const bottomRef = useRef(null);
+  const [attachment, setAttachment]     = useState(null); // { file, previewUrl, isPdf, name }
+  const bottomRef   = useRef(null);
+  const fileInputRef = useRef(null);
 
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dispute-room', swapId],
@@ -852,20 +886,49 @@ export default function DisputeRoom() {
     };
   }, [roomId, swapId, queryClient]);
 
+  const uploadMutation = useMutation({
+    mutationFn: (file) => uploadEvidenceFile(roomId, file),
+    onError: (err) => toast.error(err.response?.data?.error ?? 'Upload failed'),
+  });
+
   const sendMutation = useMutation({
-    mutationFn: () => sendDisputeMessage(roomId, input.trim(), msgType),
+    mutationFn: (attachmentMeta = null) => sendDisputeMessage(roomId, input.trim(), msgType, attachmentMeta),
     onSuccess: (msg) => {
       setInput('');
+      setAttachment(null);
       const id = msg.id || msg._id;
       setMessages(prev => prev.some(m => (m.id || m._id) === id) ? prev : [...prev, msg]);
     },
     onError: (err) => toast.error(err.response?.data?.error ?? 'Failed to send message'),
   });
 
-  const handleSend = useCallback(() => {
-    if (!input.trim() || !roomId || sendMutation.isPending) return;
-    sendMutation.mutate();
-  }, [input, roomId, sendMutation]);
+  const handleFileChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const isPdf = file.type === 'application/pdf';
+    const previewUrl = isPdf ? null : URL.createObjectURL(file);
+    setAttachment({ file, previewUrl, isPdf, name: file.name });
+    e.target.value = '';
+  };
+
+  const removeAttachment = useCallback(() => {
+    if (attachment?.previewUrl) URL.revokeObjectURL(attachment.previewUrl);
+    setAttachment(null);
+  }, [attachment]);
+
+  const handleSend = useCallback(async () => {
+    if ((!input.trim() && !attachment) || !roomId || sendMutation.isPending || uploadMutation.isPending) return;
+    let attachmentMeta = null;
+    if (attachment) {
+      try {
+        const result = await uploadMutation.mutateAsync(attachment.file);
+        attachmentMeta = { attachmentUrl: result.url, attachmentFilename: result.filename, attachmentIsPdf: result.isPdf };
+      } catch {
+        return;
+      }
+    }
+    sendMutation.mutate(attachmentMeta);
+  }, [input, roomId, attachment, sendMutation, uploadMutation]);
 
   const handleKeyDown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } };
 
@@ -1043,6 +1106,15 @@ export default function DisputeRoom() {
               className="border-t border-amber-900/15 px-4 pt-3 pb-safe flex-shrink-0"
               style={{ background: 'linear-gradient(0deg,rgba(8,10,18,0.98),rgba(12,14,22,0.95))' }}
             >
+              {/* Hidden file input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*,application/pdf"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+
               {/* Type tabs */}
               <div className="flex gap-1.5 mb-2.5">
                 {MSG_TYPES.map(({ value, label, icon: Icon }) => (
@@ -1061,7 +1133,38 @@ export default function DisputeRoom() {
                 ))}
               </div>
 
+              {/* Attachment preview strip */}
+              {attachment && (
+                <div className="mb-2 flex items-center gap-2 rounded-xl border border-amber-900/30 bg-amber-950/20 px-3 py-2">
+                  {attachment.isPdf ? (
+                    <FileText size={14} className="text-amber-600 flex-shrink-0" />
+                  ) : (
+                    <img src={attachment.previewUrl} alt="" className="w-8 h-8 rounded object-cover border border-slate-700/40 flex-shrink-0" />
+                  )}
+                  <span className="text-[11px] text-amber-700 truncate flex-1">{attachment.name}</span>
+                  {uploadMutation.isPending && <Loader2 size={11} className="text-amber-600 animate-spin flex-shrink-0" />}
+                  {!uploadMutation.isPending && (
+                    <button onClick={removeAttachment} className="text-slate-600 hover:text-slate-400 flex-shrink-0 transition-colors">
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+              )}
+
               <div className="flex gap-2 items-end pb-2">
+                {/* Paperclip */}
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Attach evidence (image or PDF)"
+                  className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 transition-all border ${
+                    attachment
+                      ? 'bg-amber-900/40 border-amber-700/60 text-amber-400'
+                      : 'bg-slate-900/60 border-slate-800 text-slate-600 hover:text-amber-600 hover:border-amber-900/50'
+                  }`}
+                >
+                  <Paperclip size={14} />
+                </button>
+
                 <textarea
                   value={input}
                   onChange={e => setInput(e.target.value)}
@@ -1083,15 +1186,15 @@ export default function DisputeRoom() {
                 />
                 <button
                   onClick={handleSend}
-                  disabled={!input.trim() || sendMutation.isPending}
+                  disabled={(!input.trim() && !attachment) || sendMutation.isPending || uploadMutation.isPending}
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-all disabled:opacity-25 disabled:cursor-not-allowed"
                   style={{
                     background: 'linear-gradient(135deg,#b45309,#78350f)',
                     border: '1px solid rgba(217,119,6,0.4)',
-                    boxShadow: input.trim() ? '0 0 12px rgba(180,83,9,0.3)' : 'none',
+                    boxShadow: (input.trim() || attachment) ? '0 0 12px rgba(180,83,9,0.3)' : 'none',
                   }}
                 >
-                  {sendMutation.isPending
+                  {sendMutation.isPending || uploadMutation.isPending
                     ? <Loader2 size={14} className="text-amber-200 animate-spin" />
                     : <Send size={14} className="text-amber-200" />
                   }

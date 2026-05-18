@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import AppShell from './components/layout/AppShell';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Onboarding from './pages/Onboarding';
+import OtpVerify from './pages/OtpVerify';
 import ForgotPassword from './pages/ForgotPassword';
 import ChangePassword from './pages/ChangePassword';
 import Home from './pages/Home';
@@ -44,6 +45,7 @@ function App() {
       {initialized && (
         <Routes>
           <Route path="/onboarding" element={<Onboarding />} />
+          <Route path="/otp" element={<OtpVerify />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route element={<ProtectedRoute />}>
             {/* Full-screen route — no AppShell wrapper */}

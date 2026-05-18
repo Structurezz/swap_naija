@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 64" width="220" height="64">
+  <!-- White background with bottom border -->
+  <rect width="220" height="64" fill="white"/>
+  <line x1="0" y1="63.5" x2="220" y2="63.5" stroke="#f3f4f6" stroke-width="1"/>
+
+  <!-- Icon box: w-8 h-8 = 32x32, rounded-xl, bg-primary green -->
+  <rect x="24" y="16" width="32" height="32" rx="12" ry="12" fill="#16a34a"/>
+
+  <!-- ArrowRightLeft icon 16x16 centered in box -->
+  <g transform="translate(32, 24)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <polyline points="11,1 15,5 11,9"/>
+    <path d="M1 5 h14"/>
+    <polyline points="5,7 1,11 5,15"/>
+    <path d="M15 11 H1"/>
+  </g>
+
+  <!-- SwapNaija text -->
+  <text
+    x="76"
+    y="32"
+    font-family="ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, sans-serif"
+    font-size="18"
+    font-weight="700"
+    fill="#111827"
+    dominant-baseline="middle"
+    text-anchor="start"
+  >SwapNaija</text>
+</svg>

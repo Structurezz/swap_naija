@@ -241,16 +241,19 @@ function HeroBanner() {
         {/* Background pattern circles */}
         <div className="pointer-events-none absolute -top-10 -right-10 w-64 h-64 rounded-full opacity-10 bg-white" />
         <div className="pointer-events-none absolute -bottom-16 -left-8 w-48 h-48 rounded-full opacity-10 bg-white" />
-        <div className="pointer-events-none absolute top-1/2 right-1/4 w-24 h-24 rounded-full opacity-5 bg-white" />
 
-        <div className="max-w-md lg:max-w-5xl mx-auto lg:mx-0 px-4 pt-3 pb-3 lg:px-10 lg:py-5">
+        {/* Large emoji — fixed to the right */}
+        <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[90px] lg:text-[130px] select-none opacity-30 lg:opacity-40 leading-none">
+          {b.emoji}
+        </div>
 
-          {/* Tag + emoji row */}
-          <div className="flex items-center justify-between mb-2">
+        <div className="max-w-md lg:max-w-5xl mx-auto lg:mx-0 px-4 pt-3 pb-3 lg:px-10 lg:py-5 relative">
+
+          {/* Badge tag */}
+          <div className="mb-2">
             <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
               {b.badge}
             </span>
-            <span className="text-3xl lg:text-4xl select-none">{b.emoji}</span>
           </div>
 
           {/* Tag label */}

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { ArrowRightLeft } from 'lucide-react';
 
 /**
  * Full-screen splash shown while the app initialises.
@@ -33,13 +34,22 @@ export default function SplashScreen({ ready }) {
         pointerEvents: fadeOut ? 'none' : 'auto',
       }}
     >
-      {/* ── Logo ── */}
+      {/* ── Logo mark ── */}
       <div
+        className="flex flex-col items-center"
         style={{ animation: 'splashLogoIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}
       >
-        <div className="bg-white rounded-3xl px-8 py-5 shadow-2xl">
-          <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-12 w-auto block" />
+        {/* Icon circle */}
+        <div className="w-24 h-24 rounded-3xl bg-white/15 flex items-center justify-center mb-5 shadow-2xl">
+          <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center">
+            <ArrowRightLeft size={32} className="text-primary" strokeWidth={2.5} />
+          </div>
         </div>
+
+        {/* Wordmark */}
+        <h1 className="font-display font-bold text-4xl text-white tracking-tight leading-none">
+          SwapNaija
+        </h1>
       </div>
 
       {/* ── Slogan ── */}

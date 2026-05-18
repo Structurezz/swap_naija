@@ -105,10 +105,11 @@ export default function Onboarding() {
         <div className="absolute top-1/2 -right-12 w-48 h-48 rounded-full bg-white/5" />
 
         {/* Logo */}
-        <div className="relative z-10 px-12 pt-12">
-          <div className="bg-white rounded-2xl px-4 py-2 inline-block">
-            <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-9 w-auto block" />
+        <div className="relative z-10 px-12 pt-12 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+            <ArrowRightLeft size={20} className="text-white" strokeWidth={2.5} />
           </div>
+          <span className="text-white font-bold text-xl tracking-tight">SwapNaija</span>
         </div>
 
         {/* Slides */}
@@ -166,8 +167,11 @@ export default function Onboarding() {
 
         {/* Mobile top bar */}
         <div className="lg:hidden bg-primary px-6 pt-14 pb-8">
-          <div className="bg-white rounded-2xl px-4 py-2 inline-block mb-4">
-            <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-8 w-auto block" />
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+              <ArrowRightLeft size={18} className="text-white" strokeWidth={2.5} />
+            </div>
+            <span className="text-white font-bold text-lg">SwapNaija</span>
           </div>
           <p className="text-white/70 text-sm">Nigeria's #1 Barter & Trade Marketplace</p>
         </div>

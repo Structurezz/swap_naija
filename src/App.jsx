@@ -38,10 +38,10 @@ function App() {
   return (
     <>
       <SplashScreen ready={initialized} />
+      <ScrollToTop />
 
       {initialized && (
         <Routes>
-          <Route path="*" element={<ScrollToTop />} />
           <Route path="/onboarding" element={<Onboarding />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route element={<ProtectedRoute />}>

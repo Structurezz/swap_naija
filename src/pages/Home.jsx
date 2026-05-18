@@ -1,7 +1,10 @@
 import { useRef, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search as SearchIcon, Sparkles, ChevronRight, ArrowRight, BadgeCheck, Zap, Gift } from 'lucide-react';
+import {
+  Search as SearchIcon, ChevronRight, ArrowRight, BadgeCheck, Zap, Gift,
+  ShieldCheck, Users, TrendingUp, Star, Wallet, Package, Clock, Award,
+} from 'lucide-react';
 import { getHomeFeed, getSuggested } from '../api/listings.api';
 import { useAuthStore } from '../store/auth.store';
 import ListingCard from '../components/features/listing/ListingCard';
@@ -12,55 +15,209 @@ import Spinner from '../components/ui/Spinner';
 const BANNERS = [
   {
     id: 1,
+    tag: 'Welcome to SwapNaija',
     title: 'Swap Smarter,\nNot Harder',
-    subtitle: 'List your item in 60 seconds and find your perfect trade today.',
-    cta: 'List Now',
+    subtitle: 'Nigeria\'s #1 peer-to-peer barter marketplace. List your item in 60 seconds and find your perfect trade today.',
+    cta: 'Start Swapping',
+    ctaSecondary: 'Browse Items',
+    ctaSecondaryHref: '/search',
     href: '/create',
-    gradient: 'from-primary to-primary-700',
+    gradient: 'from-[#0f7a5a] via-primary to-[#1db87d]',
+    accentColor: 'rgba(255,255,255,0.12)',
+    stats: [
+      { value: '10,000+', label: 'Active Swappers' },
+      { value: '50,000+', label: 'Items Listed' },
+      { value: '₦0', label: 'Listing Fee' },
+    ],
+    badge: '🔥 Trending now',
     emoji: '🔄',
+    pattern: true,
   },
   {
     id: 2,
-    title: '1,000+ Items\nWaiting for You',
-    subtitle: 'Electronics, fashion, furniture and more — all available to swap.',
-    cta: 'Browse All',
+    tag: 'Discover New Items',
+    title: 'Fresh Drops\nEvery Day',
+    subtitle: 'Electronics, fashion, furniture, phones, and more — hundreds of new listings added daily by verified swappers.',
+    cta: 'Browse All Items',
+    ctaSecondary: 'Fresh Drops',
+    ctaSecondaryHref: '/fresh-drops',
     href: '/search',
-    gradient: 'from-accent to-amber-600',
+    gradient: 'from-amber-500 via-orange-500 to-red-500',
+    accentColor: 'rgba(255,255,255,0.12)',
+    stats: [
+      { value: '500+', label: 'New Today' },
+      { value: '20+', label: 'Categories' },
+      { value: '4.8★', label: 'Avg Rating' },
+    ],
+    badge: '⚡ 500+ new today',
     emoji: '🛍️',
+    pattern: true,
   },
   {
     id: 3,
-    title: 'Trade Safely\nWith Escrow',
-    subtitle: 'SwapNaija escrow protects both parties until the deal is confirmed.',
-    cta: 'Learn More',
+    tag: 'Trade With Confidence',
+    title: 'Escrow Protection\nFor Every Swap',
+    subtitle: 'SwapNaija holds both parties\' deposits in secure escrow until the deal is confirmed — zero risk, maximum trust.',
+    cta: 'How It Works',
+    ctaSecondary: 'Top Up Wallet',
+    ctaSecondaryHref: '/wallet',
     href: '/wallet',
-    gradient: 'from-indigo-500 to-purple-600',
-    emoji: '🔒',
+    gradient: 'from-indigo-600 via-purple-600 to-violet-700',
+    accentColor: 'rgba(255,255,255,0.12)',
+    stats: [
+      { value: '100%', label: 'Secure Escrow' },
+      { value: '< 24h', label: 'Dispute Resolution' },
+      { value: '99.2%', label: 'Success Rate' },
+    ],
+    badge: '🔒 Bank-grade security',
+    emoji: '🛡️',
+    pattern: true,
+  },
+  {
+    id: 4,
+    tag: 'Build Your Reputation',
+    title: 'Get Verified\n& Stand Out',
+    subtitle: 'A verified badge boosts your swap acceptance rate by 3×. One-time fee of ₦1,000 from your wallet — badge is permanent.',
+    cta: 'Get Verified',
+    ctaSecondary: 'See Benefits',
+    ctaSecondaryHref: '/verify-account',
+    href: '/verify-account',
+    gradient: 'from-blue-600 via-blue-500 to-cyan-500',
+    accentColor: 'rgba(255,255,255,0.12)',
+    stats: [
+      { value: '3×', label: 'More Swap Offers' },
+      { value: 'Top', label: 'Search Ranking' },
+      { value: '₦1,000', label: 'One-Time Only' },
+    ],
+    badge: '✅ Permanent badge',
+    emoji: '🏅',
+    pattern: true,
+  },
+  {
+    id: 5,
+    tag: 'Grow Your Reach',
+    title: 'Boost & Get\n10× More Views',
+    subtitle: 'Boosted listings appear at the top of search and on the Featured homepage section — seen by thousands of active swappers.',
+    cta: 'Boost a Listing',
+    ctaSecondary: 'View Plans',
+    ctaSecondaryHref: '/swaps',
+    href: '/swaps',
+    gradient: 'from-rose-500 via-pink-500 to-fuchsia-600',
+    accentColor: 'rgba(255,255,255,0.12)',
+    stats: [
+      { value: '10×', label: 'More Visibility' },
+      { value: 'From', label: '₦500 only' },
+      { value: '7–30', label: 'Day Plans' },
+    ],
+    badge: '🚀 Instant activation',
+    emoji: '⚡',
+    pattern: true,
   },
 ];
 
-// ─── Campaign widgets ──────────────────────────────────────────────────────────
-const CAMPAIGNS = [
+// ─── Ad cards data ─────────────────────────────────────────────────────────────
+const AD_CARDS = [
   {
     icon: BadgeCheck,
-    color: 'bg-blue-50 text-blue-600',
-    title: 'Verify Your Account',
-    desc: 'Get a verified badge and build trust with other swappers.',
+    bg: 'bg-gradient-to-br from-blue-500 to-cyan-500',
+    lightBg: 'bg-blue-50',
+    textColor: 'text-blue-600',
+    borderColor: 'border-blue-100',
+    title: 'Get Verified',
+    desc: 'Earn a verified badge and get 3× more swap offers from trusted users.',
+    tag: '₦1,000 one-time',
+    tagColor: 'bg-blue-100 text-blue-700',
     href: '/verify-account',
-  },
-  {
-    icon: Gift,
-    color: 'bg-purple-50 text-purple-600',
-    title: 'Invite & Earn',
-    desc: 'Invite friends to SwapNaija and earn swap credits.',
-    href: '/invite',
+    highlight: true,
   },
   {
     icon: Zap,
-    color: 'bg-amber-50 text-amber-600',
+    bg: 'bg-gradient-to-br from-amber-400 to-orange-500',
+    lightBg: 'bg-amber-50',
+    textColor: 'text-amber-600',
+    borderColor: 'border-amber-100',
     title: 'Boost Your Listing',
-    desc: 'Get 10× more visibility by boosting your listing today.',
+    desc: 'Get 10× more views. Your listing appears first in search and on the homepage.',
+    tag: 'From ₦500',
+    tagColor: 'bg-amber-100 text-amber-700',
     href: '/swaps',
+    highlight: false,
+  },
+  {
+    icon: Gift,
+    bg: 'bg-gradient-to-br from-purple-500 to-violet-600',
+    lightBg: 'bg-purple-50',
+    textColor: 'text-purple-600',
+    borderColor: 'border-purple-100',
+    title: 'Invite & Earn Credits',
+    desc: 'Share your referral link. Earn swap credits for every friend who joins.',
+    tag: 'Free rewards',
+    tagColor: 'bg-purple-100 text-purple-700',
+    href: '/invite',
+    highlight: false,
+  },
+  {
+    icon: ShieldCheck,
+    bg: 'bg-gradient-to-br from-emerald-500 to-teal-600',
+    lightBg: 'bg-emerald-50',
+    textColor: 'text-emerald-600',
+    borderColor: 'border-emerald-100',
+    title: 'Swap With Escrow',
+    desc: 'Both parties are protected. Funds held in escrow until you confirm delivery.',
+    tag: '100% secure',
+    tagColor: 'bg-emerald-100 text-emerald-700',
+    href: '/wallet',
+    highlight: false,
+  },
+  {
+    icon: TrendingUp,
+    bg: 'bg-gradient-to-br from-rose-500 to-pink-600',
+    lightBg: 'bg-rose-50',
+    textColor: 'text-rose-600',
+    borderColor: 'border-rose-100',
+    title: 'Top Up & Trade',
+    desc: 'Add Barter Credits to your wallet to unlock escrow, boosts and verification.',
+    tag: 'Instant credit',
+    tagColor: 'bg-rose-100 text-rose-700',
+    href: '/wallet',
+    highlight: false,
+  },
+  {
+    icon: Users,
+    bg: 'bg-gradient-to-br from-indigo-500 to-blue-600',
+    lightBg: 'bg-indigo-50',
+    textColor: 'text-indigo-600',
+    borderColor: 'border-indigo-100',
+    title: 'Join the Community',
+    desc: '10,000+ swappers in Lagos, Abuja, Kano and all across Nigeria.',
+    tag: '10k+ members',
+    tagColor: 'bg-indigo-100 text-indigo-700',
+    href: '/search',
+    highlight: false,
+  },
+];
+
+// ─── Mid-page promo strips ─────────────────────────────────────────────────────
+const PROMO_STRIPS = [
+  {
+    emoji: '🇳🇬',
+    title: 'Made for Nigeria',
+    desc: 'Swap goods and services with people near you — Lagos, Abuja, Kano and everywhere in between.',
+    href: '/search',
+    cta: 'Explore',
+    bg: 'from-green-50 to-emerald-50',
+    border: 'border-emerald-100',
+    ctaColor: 'text-emerald-700',
+  },
+  {
+    emoji: '🤝',
+    title: 'Have Something to Swap?',
+    desc: 'List your item for free and reach thousands of active traders across Nigeria in minutes.',
+    href: '/create',
+    cta: 'List Now',
+    bg: 'from-primary/10 to-primary/5',
+    border: 'border-primary/20',
+    ctaColor: 'text-primary',
   },
 ];
 
@@ -70,7 +227,7 @@ function HeroBanner() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const t = setInterval(() => setActive(i => (i + 1) % BANNERS.length), 4000);
+    const t = setInterval(() => setActive(i => (i + 1) % BANNERS.length), 5000);
     return () => clearInterval(t);
   }, []);
 
@@ -78,34 +235,83 @@ function HeroBanner() {
 
   return (
     <div className="relative overflow-hidden">
-      <div className={`bg-gradient-to-r ${b.gradient} px-5 py-6 lg:py-8 transition-all duration-500`}>
-        <div className="max-w-md lg:max-w-4xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <p className="text-white/70 text-xs font-medium uppercase tracking-wider mb-1">SwapNaija</p>
-            <h2 className="font-display font-bold text-white text-xl lg:text-3xl whitespace-pre-line leading-tight mb-2">
-              {b.title}
-            </h2>
-            <p className="text-white/80 text-sm mb-4 max-w-xs">{b.subtitle}</p>
+      {/* Slide */}
+      <div className={`bg-gradient-to-br ${b.gradient} relative overflow-hidden`} key={b.id}>
+
+        {/* Background pattern circles */}
+        <div className="pointer-events-none absolute -top-10 -right-10 w-64 h-64 rounded-full opacity-10 bg-white" />
+        <div className="pointer-events-none absolute -bottom-16 -left-8 w-48 h-48 rounded-full opacity-10 bg-white" />
+        <div className="pointer-events-none absolute top-1/2 right-1/4 w-24 h-24 rounded-full opacity-5 bg-white" />
+
+        <div className="max-w-md lg:max-w-5xl mx-auto px-5 pt-5 pb-4 lg:px-8 lg:py-8">
+
+          {/* Tag + emoji row */}
+          <div className="flex items-center justify-between mb-3 lg:mb-4">
+            <span className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {b.badge}
+            </span>
+            <span className="text-4xl lg:text-5xl select-none">{b.emoji}</span>
+          </div>
+
+          {/* Tag label */}
+          <p className="text-white/60 text-xs font-medium uppercase tracking-widest mb-1 lg:mb-2">{b.tag}</p>
+
+          {/* Title */}
+          <h2 className="font-display font-bold text-white text-2xl lg:text-4xl whitespace-pre-line leading-tight mb-2 lg:mb-3">
+            {b.title}
+          </h2>
+
+          {/* Subtitle */}
+          <p className="text-white/80 text-sm lg:text-base mb-4 max-w-sm lg:max-w-lg leading-relaxed">
+            {b.subtitle}
+          </p>
+
+          {/* CTAs */}
+          <div className="flex flex-wrap gap-2 mb-5 lg:mb-6">
             <button
               onClick={() => navigate(b.href)}
-              className="bg-white text-ink font-semibold text-sm px-5 py-2.5 rounded-2xl hover:bg-gray-50 transition-all active:scale-95 inline-flex items-center gap-1.5"
+              className="bg-white text-ink font-bold text-sm px-5 py-2.5 rounded-2xl hover:bg-gray-50 transition-all active:scale-95 inline-flex items-center gap-1.5 shadow-lg"
             >
               {b.cta} <ArrowRight size={14} />
             </button>
+            {b.ctaSecondary && (
+              <button
+                onClick={() => navigate(b.ctaSecondaryHref)}
+                className="bg-white/15 border border-white/30 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl hover:bg-white/25 transition-all active:scale-95 inline-flex items-center gap-1.5 backdrop-blur-sm"
+              >
+                {b.ctaSecondary}
+              </button>
+            )}
           </div>
-          <div className="text-6xl lg:text-8xl select-none">{b.emoji}</div>
+
+          {/* Stats strip */}
+          <div className="flex gap-4 lg:gap-8 border-t border-white/15 pt-3">
+            {b.stats.map(s => (
+              <div key={s.label}>
+                <p className="text-white font-bold text-base lg:text-lg leading-none">{s.value}</p>
+                <p className="text-white/55 text-xs mt-0.5">{s.label}</p>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Dots */}
-      <div className="flex justify-center gap-1.5 py-2 bg-white">
-        {BANNERS.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => setActive(i)}
-            className={`rounded-full transition-all ${i === active ? 'w-5 h-2 bg-primary' : 'w-2 h-2 bg-gray-300'}`}
-          />
-        ))}
+      {/* Progress + dots bar */}
+      <div className="bg-white px-5 py-2.5 flex items-center gap-3">
+        <div className="flex gap-1.5 flex-1">
+          {BANNERS.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setActive(i)}
+              className={`h-1.5 rounded-full transition-all duration-300 ${
+                i === active ? 'bg-primary flex-[2]' : 'bg-gray-200 flex-1'
+              }`}
+            />
+          ))}
+        </div>
+        <span className="text-xs text-gray-400 font-medium tabular-nums flex-none">
+          {active + 1} / {BANNERS.length}
+        </span>
       </div>
     </div>
   );
@@ -156,22 +362,38 @@ function ListingRow({ listings }) {
   );
 }
 
-// ─── Campaign widget row ───────────────────────────────────────────────────────
-function CampaignWidgets() {
+// ─── Ad card grid ──────────────────────────────────────────────────────────────
+function AdCards() {
   return (
-    <div className="flex gap-3 overflow-x-auto pb-1 scrollbar-hide lg:grid lg:grid-cols-3">
-      {CAMPAIGNS.map(({ icon: Icon, color, title, desc, href }) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+      {AD_CARDS.map(({ icon: Icon, bg, lightBg, textColor, borderColor, title, desc, tag, tagColor, href, highlight }) => (
         <Link
           key={title}
           to={href}
-          className="flex-none w-60 lg:w-auto bg-white rounded-2xl shadow-card p-4 flex items-start gap-3 hover:shadow-card-hover transition-shadow"
+          className={`group relative bg-white rounded-2xl border ${borderColor} p-4 flex flex-col gap-3 hover:shadow-lg transition-all duration-200 overflow-hidden ${highlight ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
         >
-          <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-none ${color}`}>
-            <Icon size={20} />
+          {/* Subtle background glow */}
+          <div className={`pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${lightBg} blur-xl`} />
+
+          <div className="flex items-start justify-between gap-2 relative">
+            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none ${bg} shadow-sm`}>
+              <Icon size={20} className="text-white" />
+            </div>
+            {highlight && (
+              <span className="text-[10px] font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full">POPULAR</span>
+            )}
           </div>
-          <div>
-            <p className="font-semibold text-sm">{title}</p>
-            <p className="text-xs text-gray-500 mt-0.5">{desc}</p>
+
+          <div className="relative flex-1">
+            <p className="font-bold text-sm text-gray-900 mb-1">{title}</p>
+            <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
+          </div>
+
+          <div className="flex items-center justify-between relative">
+            <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${tagColor}`}>{tag}</span>
+            <span className={`${textColor} opacity-0 group-hover:opacity-100 transition-opacity`}>
+              <ArrowRight size={14} />
+            </span>
           </div>
         </Link>
       ))}
@@ -179,20 +401,47 @@ function CampaignWidgets() {
   );
 }
 
-// ─── Mid-page promo banner ─────────────────────────────────────────────────────
-function PromoBanner() {
+// ─── Mid-page promo strips ─────────────────────────────────────────────────────
+function PromoStrips() {
   return (
-    <div className="bg-gradient-to-r from-accent/20 to-amber-100 rounded-2xl p-4 flex items-center gap-4">
-      <div className="text-4xl">🇳🇬</div>
-      <div className="flex-1">
-        <p className="font-display font-bold text-sm">Made for Nigeria</p>
-        <p className="text-xs text-gray-600 mt-0.5">
-          Swap goods and services with people near you — Lagos, Abuja, Kano and everywhere.
-        </p>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {PROMO_STRIPS.map(strip => (
+        <div key={strip.title} className={`bg-gradient-to-r ${strip.bg} border ${strip.border} rounded-2xl p-4 flex items-center gap-4`}>
+          <div className="text-4xl select-none flex-none">{strip.emoji}</div>
+          <div className="flex-1 min-w-0">
+            <p className="font-display font-bold text-sm text-gray-900">{strip.title}</p>
+            <p className="text-xs text-gray-600 mt-0.5 leading-relaxed">{strip.desc}</p>
+          </div>
+          <Link
+            to={strip.href}
+            className={`flex-none text-xs font-semibold ${strip.ctaColor} whitespace-nowrap flex items-center gap-1 hover:underline`}
+          >
+            {strip.cta} <ChevronRight size={14} />
+          </Link>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Trust bar ─────────────────────────────────────────────────────────────────
+function TrustBar() {
+  const items = [
+    { icon: ShieldCheck, label: 'Escrow Protected', color: 'text-emerald-600' },
+    { icon: Star,        label: 'Verified Sellers',  color: 'text-amber-500'  },
+    { icon: Clock,       label: 'Fast Matching',      color: 'text-blue-500'   },
+    { icon: Award,       label: 'Top-Rated Swaps',   color: 'text-purple-600' },
+  ];
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3">
+      <div className="flex items-center justify-around gap-2">
+        {items.map(({ icon: Icon, label, color }) => (
+          <div key={label} className="flex flex-col items-center gap-1 text-center">
+            <Icon size={18} className={color} />
+            <span className="text-[10px] font-semibold text-gray-500 leading-tight">{label}</span>
+          </div>
+        ))}
       </div>
-      <Link to="/search" className="flex-none text-xs font-semibold text-accent whitespace-nowrap flex items-center gap-1">
-        Explore <ChevronRight size={14} />
-      </Link>
     </div>
   );
 }
@@ -283,10 +532,13 @@ export default function Home() {
       {feed && (
         <div className="max-w-md lg:max-w-none mx-auto px-4 lg:px-8 py-5 space-y-8">
 
-          {/* ── Campaign widgets ── */}
+              {/* ── Trust bar ── */}
+          <TrustBar />
+
+          {/* ── Ad cards ── */}
           <section>
-            <SectionHeader title="For You" icon="✨" />
-            <CampaignWidgets />
+            <SectionHeader title="Explore SwapNaija" icon="✨" />
+            <AdCards />
           </section>
 
           {/* ── Suggested for you ── */}
@@ -313,8 +565,8 @@ export default function Home() {
             </section>
           )}
 
-          {/* ── Promo banner ── */}
-          <PromoBanner />
+          {/* ── Promo strips ── */}
+          <PromoStrips />
 
           {/* ── Per-category sections ── */}
           {feed.categories?.map(({ category, listings }) => (
@@ -331,18 +583,31 @@ export default function Home() {
           ))}
 
           {/* ── Bottom promo ── */}
-          <div className="bg-primary rounded-3xl p-6 text-white text-center">
-            <div className="text-4xl mb-3">🤝</div>
-            <h3 className="font-display font-bold text-lg mb-1">Have something to swap?</h3>
-            <p className="text-primary-100 text-sm mb-4">
-              List your item for free and reach thousands of traders across Nigeria.
-            </p>
-            <Link
-              to="/create"
-              className="inline-flex items-center gap-2 bg-white text-primary font-semibold px-6 py-3 rounded-2xl hover:bg-gray-50 transition-all active:scale-95"
-            >
-              <span>List an Item</span> <ArrowRight size={16} />
-            </Link>
+          <div className="bg-gradient-to-br from-primary via-primary to-[#0f7a5a] rounded-3xl p-6 text-white relative overflow-hidden">
+            <div className="pointer-events-none absolute -top-8 -right-8 w-40 h-40 rounded-full bg-white/5" />
+            <div className="pointer-events-none absolute -bottom-10 -left-6 w-32 h-32 rounded-full bg-white/5" />
+            <div className="relative text-center">
+              <div className="text-4xl mb-3">🤝</div>
+              <h3 className="font-display font-bold text-xl mb-2">Have something to swap?</h3>
+              <p className="text-white/75 text-sm mb-5 max-w-xs mx-auto leading-relaxed">
+                List your item for free and reach thousands of active traders across Nigeria in under 60 seconds.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                <Link
+                  to="/create"
+                  className="inline-flex items-center justify-center gap-2 bg-white text-primary font-bold px-6 py-3 rounded-2xl hover:bg-gray-50 transition-all active:scale-95 shadow-lg"
+                >
+                  <Package size={16} /> List an Item — Free
+                </Link>
+                <Link
+                  to="/search"
+                  className="inline-flex items-center justify-center gap-2 bg-white/15 border border-white/25 text-white font-semibold px-6 py-3 rounded-2xl hover:bg-white/25 transition-all active:scale-95"
+                >
+                  Browse Listings <ArrowRight size={16} />
+                </Link>
+              </div>
+              <p className="text-white/40 text-xs mt-4">No card required · Instant listing · Free forever</p>
+            </div>
           </div>
 
           <div className="h-4" />

@@ -243,41 +243,41 @@ function HeroBanner() {
         <div className="pointer-events-none absolute -bottom-16 -left-8 w-48 h-48 rounded-full opacity-10 bg-white" />
         <div className="pointer-events-none absolute top-1/2 right-1/4 w-24 h-24 rounded-full opacity-5 bg-white" />
 
-        <div className="max-w-md lg:max-w-5xl mx-auto px-5 pt-5 pb-4 lg:px-8 lg:py-8">
+        <div className="max-w-md lg:max-w-5xl mx-auto px-4 pt-3 pb-3 lg:px-8 lg:py-5">
 
           {/* Tag + emoji row */}
-          <div className="flex items-center justify-between mb-3 lg:mb-4">
-            <span className="inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+          <div className="flex items-center justify-between mb-2">
+            <span className="inline-flex items-center gap-1 bg-white/20 text-white text-[10px] font-semibold px-2.5 py-0.5 rounded-full">
               {b.badge}
             </span>
-            <span className="text-4xl lg:text-5xl select-none">{b.emoji}</span>
+            <span className="text-3xl lg:text-4xl select-none">{b.emoji}</span>
           </div>
 
           {/* Tag label */}
-          <p className="text-white/60 text-xs font-medium uppercase tracking-widest mb-1 lg:mb-2">{b.tag}</p>
+          <p className="text-white/55 text-[10px] font-medium uppercase tracking-widest mb-0.5">{b.tag}</p>
 
           {/* Title */}
-          <h2 className="font-display font-bold text-white text-2xl lg:text-4xl whitespace-pre-line leading-tight mb-2 lg:mb-3">
+          <h2 className="font-display font-bold text-white text-lg lg:text-2xl whitespace-pre-line leading-tight mb-1.5">
             {b.title}
           </h2>
 
           {/* Subtitle */}
-          <p className="text-white/80 text-sm lg:text-base mb-4 max-w-sm lg:max-w-lg leading-relaxed">
+          <p className="text-white/75 text-xs lg:text-sm mb-3 max-w-sm lg:max-w-lg leading-relaxed">
             {b.subtitle}
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-wrap gap-2 mb-5 lg:mb-6">
+          <div className="flex flex-wrap gap-2 mb-3">
             <button
               onClick={() => navigate(b.href)}
-              className="bg-white text-ink font-bold text-sm px-5 py-2.5 rounded-2xl hover:bg-gray-50 transition-all active:scale-95 inline-flex items-center gap-1.5 shadow-lg"
+              className="bg-white text-ink font-bold text-xs px-4 py-2 rounded-xl hover:bg-gray-50 transition-all active:scale-95 inline-flex items-center gap-1.5 shadow-md"
             >
-              {b.cta} <ArrowRight size={14} />
+              {b.cta} <ArrowRight size={12} />
             </button>
             {b.ctaSecondary && (
               <button
                 onClick={() => navigate(b.ctaSecondaryHref)}
-                className="bg-white/15 border border-white/30 text-white font-semibold text-sm px-5 py-2.5 rounded-2xl hover:bg-white/25 transition-all active:scale-95 inline-flex items-center gap-1.5 backdrop-blur-sm"
+                className="bg-white/15 border border-white/30 text-white font-semibold text-xs px-4 py-2 rounded-xl hover:bg-white/25 transition-all active:scale-95 inline-flex items-center gap-1.5"
               >
                 {b.ctaSecondary}
               </button>
@@ -285,11 +285,11 @@ function HeroBanner() {
           </div>
 
           {/* Stats strip */}
-          <div className="flex gap-4 lg:gap-8 border-t border-white/15 pt-3">
+          <div className="flex gap-4 lg:gap-8 border-t border-white/15 pt-2">
             {b.stats.map(s => (
               <div key={s.label}>
-                <p className="text-white font-bold text-base lg:text-lg leading-none">{s.value}</p>
-                <p className="text-white/55 text-xs mt-0.5">{s.label}</p>
+                <p className="text-white font-bold text-sm leading-none">{s.value}</p>
+                <p className="text-white/50 text-[10px] mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>

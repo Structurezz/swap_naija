@@ -466,23 +466,6 @@ export default function Home() {
       {/* ── Category pills ── */}
       {feed?.categories?.length > 0 && <CategoryRow categories={feed.categories} />}
 
-      {/* ── Discover quick links ── */}
-      <div className="max-w-md lg:max-w-none mx-auto px-4 lg:px-8 pt-4">
-        <div className="grid grid-cols-3 gap-3">
-          <Link to="/fresh-drops" className="flex flex-col items-center gap-1.5 bg-yellow-50 rounded-2xl py-3 px-2 border border-yellow-100 hover:bg-yellow-100 transition">
-            <span className="text-xl">⚡</span>
-            <span className="text-xs font-semibold text-yellow-700">Fresh Drops</span>
-          </Link>
-          <Link to="/featured" className="flex flex-col items-center gap-1.5 bg-amber-50 rounded-2xl py-3 px-2 border border-amber-100 hover:bg-amber-100 transition">
-            <span className="text-xl">⭐</span>
-            <span className="text-xs font-semibold text-amber-700">Featured</span>
-          </Link>
-          <Link to="/suggested" className="flex flex-col items-center gap-1.5 bg-purple-50 rounded-2xl py-3 px-2 border border-purple-100 hover:bg-purple-100 transition">
-            <span className="text-xl">✨</span>
-            <span className="text-xs font-semibold text-purple-700">For You</span>
-          </Link>
-        </div>
-      </div>
 
       {isLoading && (
         <div className="flex justify-center py-16"><Spinner size="lg" /></div>

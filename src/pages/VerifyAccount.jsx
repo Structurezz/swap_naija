@@ -123,7 +123,7 @@ export default function VerifyAccount() {
               </div>
             </div>
             {!canAfford && (
-              <Link to="/wallet">
+              <Link to="/wallet?returnTo=/verify-account">
                 <Button size="sm" variant="primary">Top Up</Button>
               </Link>
             )}
@@ -144,7 +144,7 @@ export default function VerifyAccount() {
               Get Verified — ₦1,000 from Wallet
             </Button>
           ) : (
-            <Link to="/wallet">
+            <Link to="/wallet?returnTo=/verify-account">
               <Button fullWidth size="lg" variant="secondary">
                 <Wallet size={18} />
                 Top Up Wallet First
@@ -268,7 +268,7 @@ export default function VerifyAccount() {
                     </div>
                   </div>
                   {!canAfford && (
-                    <Link to="/wallet">
+                    <Link to="/wallet?returnTo=/verify-account">
                       <Button size="sm" variant="primary">Top Up</Button>
                     </Link>
                   )}
@@ -281,7 +281,7 @@ export default function VerifyAccount() {
                     Get Verified — ₦1,000 from Wallet
                   </Button>
                 ) : (
-                  <Link to="/wallet">
+                  <Link to="/wallet?returnTo=/verify-account">
                     <Button fullWidth size="lg" variant="secondary">
                       <Wallet size={18} />
                       Top Up Wallet First

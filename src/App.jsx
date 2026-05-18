@@ -23,6 +23,7 @@ import FeaturedListings from './pages/FeaturedListings';
 import VerifyAccount from './pages/VerifyAccount';
 import InviteEarn from './pages/InviteEarn';
 import BoostListing from './pages/BoostListing';
+import BoostSelect from './pages/BoostSelect';
 import EditListing from './pages/EditListing';
 import DisputeRoom from './pages/DisputeRoom';
 import { useAuthStore } from './store/auth.store';
@@ -66,6 +67,7 @@ function App() {
               <Route path="/featured" element={<FeaturedListings />} />
               <Route path="/verify-account" element={<VerifyAccount />} />
               <Route path="/invite" element={<InviteEarn />} />
+              <Route path="/boost" element={<BoostSelect />} />
               <Route path="/boost/:id" element={<BoostListing />} />
               <Route path="/listing/:id/edit" element={<EditListing />} />
             </Route>

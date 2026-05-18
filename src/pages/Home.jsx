@@ -100,8 +100,8 @@ const BANNERS = [
     subtitle: 'Boosted listings appear at the top of search and on the Featured homepage section — seen by thousands of active swappers.',
     cta: 'Boost a Listing',
     ctaSecondary: 'View Plans',
-    ctaSecondaryHref: '/swaps',
-    href: '/swaps',
+    ctaSecondaryHref: '/boost',
+    href: '/boost',
     gradient: 'from-rose-500 via-pink-500 to-fuchsia-600',
     accentColor: 'rgba(255,255,255,0.12)',
     stats: [
@@ -140,7 +140,7 @@ const AD_CARDS = [
     desc: 'Get 10× more views. Your listing appears first in search and on the homepage.',
     tag: 'From ₦500',
     tagColor: 'bg-amber-100 text-amber-700',
-    href: '/swaps',
+    href: '/boost',
     highlight: false,
   },
   {

@@ -299,22 +299,17 @@ function HeroBanner() {
         </div>
       </div>
 
-      {/* Progress + dots bar */}
-      <div className="bg-white px-5 py-2.5 flex items-center gap-3">
-        <div className="flex gap-1.5 flex-1">
-          {BANNERS.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setActive(i)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${
-                i === active ? 'bg-primary flex-[2]' : 'bg-gray-200 flex-1'
-              }`}
-            />
-          ))}
-        </div>
-        <span className="text-xs text-gray-400 font-medium tabular-nums flex-none">
-          {active + 1} / {BANNERS.length}
-        </span>
+      {/* Dots */}
+      <div className="bg-white py-2 flex justify-center gap-1.5">
+        {BANNERS.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => setActive(i)}
+            className={`rounded-full transition-all duration-300 ${
+              i === active ? 'w-5 h-2 bg-primary' : 'w-2 h-2 bg-gray-300'
+            }`}
+          />
+        ))}
       </div>
     </div>
   );

@@ -243,7 +243,7 @@ function HeroBanner() {
         <div className="pointer-events-none absolute -bottom-16 -left-8 w-48 h-48 rounded-full opacity-10 bg-white" />
         <div className="pointer-events-none absolute top-1/2 right-1/4 w-24 h-24 rounded-full opacity-5 bg-white" />
 
-        <div className="max-w-md lg:max-w-5xl mx-auto px-4 pt-3 pb-3 lg:px-8 lg:py-5">
+        <div className="max-w-md lg:max-w-5xl mx-auto lg:mx-0 px-4 pt-3 pb-3 lg:px-10 lg:py-5">
 
           {/* Tag + emoji row */}
           <div className="flex items-center justify-between mb-2">
@@ -376,8 +376,8 @@ function AdCards() {
           <div className={`pointer-events-none absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${lightBg} blur-xl`} />
 
           <div className="flex items-start justify-between gap-2 relative">
-            <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none ${bg} shadow-sm`}>
-              <Icon size={20} className="text-white" />
+            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center flex-none ${bg} shadow-sm`}>
+              <Icon size={28} className="text-white" />
             </div>
             {highlight && (
               <span className="text-[10px] font-bold bg-blue-500 text-white px-2 py-0.5 rounded-full">POPULAR</span>

@@ -1,249 +1,305 @@
-import { useState } from 'react';
-import { Navigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Navigate, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../hooks/useAuth';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { useAuthStore } from '../store/auth.store';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, ArrowRightLeft, ShieldCheck, Zap, Users } from 'lucide-react';
 
-const slide = {
-  initial: { opacity: 0, x: 24 },
+const SLIDES = [
+  {
+    icon: <ArrowRightLeft size={36} className="text-white" />,
+    title: 'What is Barter?',
+    body: 'Barter is trading what you have for what you need — no cash required. You list an item, find someone who wants it, and swap directly.',
+  },
+  {
+    icon: <ShieldCheck size={36} className="text-white" />,
+    title: 'Escrow Protection',
+    body: 'Every swap is protected by our escrow system. Items are held securely until both parties confirm — so you never get cheated.',
+  },
+  {
+    icon: <Zap size={36} className="text-white" />,
+    title: 'Smart Matching',
+    body: 'Our algorithm finds the best swap matches for your listings automatically — saving you time and getting you the best deal.',
+  },
+  {
+    icon: <Users size={36} className="text-white" />,
+    title: 'Verified Community',
+    body: "Every member is verified. Ratings, reviews, and KYC checks ensure you're always trading with real, trusted Nigerians.",
+  },
+];
+
+const formSlide = {
+  initial: { opacity: 0, x: 20 },
   animate: { opacity: 1, x: 0 },
-  exit:    { opacity: 0, x: -24 },
+  exit: { opacity: 0, x: -20 },
 };
 
 export default function Onboarding() {
   const { isAuthenticated } = useAuthStore();
-  const [tab, setTab]       = useState('phone');   // 'phone' | 'email'
-  const [mode, setMode]     = useState('login');    // 'login' | 'register'
+  const navigate = useNavigate();
+
+  const [mode, setMode] = useState('login');
   const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
+  const [slide, setSlide] = useState(0);
+  const [slideDir, setSlideDir] = useState(1);
 
-  // Phone OTP state
-  const [step, setStep]     = useState('phone');
-  const [phone, setPhone]   = useState('+234');
-  const [otp, setOtp]       = useState('');
-  const [devCode, setDevCode] = useState(null);
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [form, setForm] = useState({ email: '', password: '', fullName: '', confirmPassword: '', phone: '' });
 
-  // Email/password state
-  const [form, setForm]     = useState({ email: '', password: '', fullName: '', confirmPassword: '', phone: '' });
-  const [pushEnabled, setPushEnabled] = useState(false);
+  const { loginOtpAsync, isLoginOtpPending, registerAsync, isRegistering } = useAuth();
 
-  const {
-    sendOtpAsync, isSendingOtp,
-    verifyOtpAsync, isVerifying,
-    loginEmailAsync, isLoggingIn,
-    registerAsync, isRegistering,
-  } = useAuth();
+  useEffect(() => {
+    const t = setInterval(() => {
+      setSlideDir(1);
+      setSlide(s => (s + 1) % SLIDES.length);
+    }, 4000);
+    return () => clearInterval(t);
+  }, []);
 
   if (isAuthenticated()) return <Navigate to="/" replace />;
 
   const setField = (k) => (e) => setForm(f => ({ ...f, [k]: e.target.value }));
 
-  const handleSendOtp = async () => {
+  const goSlide = (i) => {
+    setSlideDir(i > slide ? 1 : -1);
+    setSlide(i);
+  };
+
+  const handleLogin = async () => {
+    const { default: toast } = await import('react-hot-toast');
+    const email = loginEmail.trim().toLowerCase();
+    if (!email || !/\S+@\S+\.\S+/.test(email)) { toast.error('Enter a valid email address'); return; }
+    if (!loginPassword) { toast.error('Enter your password'); return; }
     try {
-      const result = await sendOtpAsync(phone);
-      if (result.code) setDevCode(result.code);
-      setStep('otp');
+      const result = await loginOtpAsync({ email, password: loginPassword });
+      navigate('/otp', { state: { email } });
     } catch {}
   };
 
-  const handleVerify = async () => {
-    try { await verifyOtpAsync({ phone, code: otp }); } catch {}
-  };
-
-  const handleEmailLogin = async () => {
-    try { await loginEmailAsync({ email: form.email, password: form.password }); } catch {}
-  };
-
-  const handlePushToggle = async (checked) => {
-    if (checked && 'Notification' in window) {
-      const permission = await Notification.requestPermission();
-      setPushEnabled(permission === 'granted');
-    } else {
-      setPushEnabled(checked);
-    }
-  };
-
   const handleRegister = async () => {
-    const { toast } = await import('react-hot-toast');
-    if (form.password !== form.confirmPassword) {
-      toast.error('Passwords do not match');
-      return;
-    }
-    if (form.phone && !/^\+234[0-9]{10}$/.test(form.phone)) {
-      toast.error('Phone must be in format +2348012345678');
-      return;
-    }
+    const { default: toast } = await import('react-hot-toast');
+    if (!form.fullName.trim()) { toast.error('Enter your full name'); return; }
+    if (!form.email.trim()) { toast.error('Enter your email'); return; }
+    if (form.password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+    if (form.password !== form.confirmPassword) { toast.error('Passwords do not match'); return; }
+    if (form.phone && !/^\+234[0-9]{10}$/.test(form.phone)) { toast.error('Phone must be +2348012345678'); return; }
     try {
-      const payload = { email: form.email, password: form.password, fullName: form.fullName };
+      const payload = { email: form.email.trim(), password: form.password, fullName: form.fullName.trim() };
       if (form.phone) payload.phone = form.phone;
       await registerAsync(payload);
     } catch {}
   };
 
   return (
-    <div className="min-h-screen bg-bg flex flex-col">
-      {/* Hero */}
-      <div className="bg-primary text-white px-6 pt-16 pb-10">
-        <div className="text-4xl mb-3">🔄</div>
-        <h1 className="font-display font-bold text-3xl">SwapNaija</h1>
-        <p className="text-primary-100 mt-1">Nigeria's #1 Barter & Trade Marketplace</p>
-      </div>
+    <div className="min-h-screen flex">
 
-      <div className="flex-1 px-6 py-6 max-w-sm mx-auto w-full">
-        {/* Tab switcher */}
-        <div className="flex bg-gray-100 rounded-2xl p-1 mb-6">
-          {['phone', 'email'].map(t => (
-            <button
-              key={t}
-              onClick={() => { setTab(t); setStep('phone'); setMode('login'); }}
-              className={`flex-1 py-2 rounded-xl text-sm font-medium transition-all ${
-                tab === t ? 'bg-white text-ink shadow-sm' : 'text-gray-500'
-              }`}
-            >
-              {t === 'phone' ? '📱 Phone OTP' : '✉️ Email'}
-            </button>
-          ))}
+      {/* ── Left panel: info slides ── */}
+      <div className="hidden lg:flex lg:w-[55%] bg-primary flex-col relative overflow-hidden">
+        {/* Background circles */}
+        <div className="absolute -top-24 -left-24 w-96 h-96 rounded-full bg-white/5" />
+        <div className="absolute -bottom-32 -right-20 w-[28rem] h-[28rem] rounded-full bg-white/5" />
+        <div className="absolute top-1/2 -right-12 w-48 h-48 rounded-full bg-white/5" />
+
+        {/* Logo */}
+        <div className="relative z-10 px-12 pt-12">
+          <div className="bg-white rounded-2xl px-4 py-2 inline-block">
+            <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-9 w-auto block" />
+          </div>
         </div>
 
-        <AnimatePresence mode="wait">
-
-          {/* ── Phone OTP flow ── */}
-          {tab === 'phone' && step === 'phone' && (
-            <motion.div key="phone" {...slide} className="space-y-5">
-              <div>
-                <h2 className="font-display font-bold text-2xl">Welcome back</h2>
-                <p className="text-gray-500 mt-1 text-sm">Enter your Nigerian phone number</p>
-              </div>
-              <Input label="Phone Number" type="tel" value={phone}
-                onChange={(e) => setPhone(e.target.value)} placeholder="+2348012345678" />
-              <Button fullWidth loading={isSendingOtp} onClick={handleSendOtp}>
-                Send OTP
-              </Button>
-              <p className="text-xs text-center text-gray-400">
-                By continuing, you agree to our Terms of Service
-              </p>
-            </motion.div>
-          )}
-
-          {tab === 'phone' && step === 'otp' && (
-            <motion.div key="otp" {...slide} className="space-y-5">
-              <div>
-                <h2 className="font-display font-bold text-2xl">Enter OTP</h2>
-                <p className="text-gray-500 mt-1 text-sm">We sent a code to {phone}</p>
-                {devCode && (
-                  <p className="text-xs text-primary mt-1 bg-primary-50 px-3 py-1 rounded-lg inline-block">
-                    Dev OTP: {devCode}
-                  </p>
-                )}
-              </div>
-              <Input label="6-digit OTP" type="text" inputMode="numeric" maxLength={6}
-                value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="123456" />
-              <Button fullWidth loading={isVerifying} onClick={handleVerify} disabled={otp.length !== 6}>
-                Verify & Login
-              </Button>
-              <button onClick={() => { setStep('phone'); setDevCode(null); }}
-                className="w-full text-sm text-gray-500 text-center">
-                ← Change number
-              </button>
-            </motion.div>
-          )}
-
-          {/* ── Email flow ── */}
-          {tab === 'email' && mode === 'login' && (
-            <motion.div key="email-login" {...slide} className="space-y-5">
-              <div>
-                <h2 className="font-display font-bold text-2xl">Sign in</h2>
-                <p className="text-gray-500 mt-1 text-sm">Use your email and password</p>
-              </div>
-              <Input label="Email" type="email" value={form.email}
-                onChange={setField('email')} placeholder="you@example.com" />
-              <div className="relative">
-                <Input label="Password" type={showPass ? 'text' : 'password'}
-                  value={form.password} onChange={setField('password')} placeholder="••••••••" />
-                <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-3 top-9 text-gray-400">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              <div className="text-right -mt-2">
-                <Link to="/forgot-password" className="text-sm text-primary font-medium">
-                  Forgot password?
-                </Link>
-              </div>
-              <Button fullWidth loading={isLoggingIn} onClick={handleEmailLogin}>
-                Sign In
-              </Button>
-              <p className="text-sm text-center text-gray-500">
-                Don't have an account?{' '}
-                <button onClick={() => setMode('register')} className="text-primary font-medium">
-                  Register
-                </button>
-              </p>
-            </motion.div>
-          )}
-
-          {tab === 'email' && mode === 'register' && (
-            <motion.div key="email-register" {...slide} className="space-y-4">
-              <div>
-                <h2 className="font-display font-bold text-2xl">Create account</h2>
-                <p className="text-gray-500 mt-1 text-sm">Join thousands of swappers</p>
-              </div>
-              <Input label="Full Name" value={form.fullName}
-                onChange={setField('fullName')} placeholder="Amaka Okafor" />
-              <Input label="Email" type="email" value={form.email}
-                onChange={setField('email')} placeholder="you@example.com" />
-              <div className="relative">
-                <Input label="Password" type={showPass ? 'text' : 'password'}
-                  value={form.password} onChange={setField('password')} placeholder="Min. 8 characters" />
-                <button type="button" onClick={() => setShowPass(v => !v)}
-                  className="absolute right-3 top-9 text-gray-400">
-                  {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-              <Input label="Confirm Password" type="password"
-                value={form.confirmPassword} onChange={setField('confirmPassword')}
-                placeholder="Repeat password" />
-              <Input label="Phone Number (optional)" type="tel" value={form.phone}
-                onChange={setField('phone')} placeholder="+2348012345678" autoComplete="off" />
-              <label className="flex items-start gap-3 cursor-pointer select-none">
-                <div className="relative mt-0.5 flex-shrink-0">
-                  <input
-                    type="checkbox"
-                    className="sr-only peer"
-                    checked={pushEnabled}
-                    onChange={(e) => handlePushToggle(e.target.checked)}
-                  />
-                  <div className="w-5 h-5 rounded border-2 border-gray-300 peer-checked:bg-primary peer-checked:border-primary flex items-center justify-center transition-colors">
-                    {pushEnabled && (
-                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                      </svg>
-                    )}
-                  </div>
+        {/* Slides */}
+        <div className="relative z-10 flex-1 flex flex-col justify-center px-12">
+          <div className="overflow-hidden">
+            <AnimatePresence mode="wait" custom={slideDir}>
+              <motion.div
+                key={slide}
+                custom={slideDir}
+                variants={{
+                  initial: (d) => ({ opacity: 0, x: d * 60 }),
+                  animate: { opacity: 1, x: 0 },
+                  exit: (d) => ({ opacity: 0, x: d * -60 }),
+                }}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ duration: 0.4, ease: 'easeOut' }}
+              >
+                <div className="w-16 h-16 rounded-2xl bg-white/15 flex items-center justify-center mb-8">
+                  {SLIDES[slide].icon}
                 </div>
-                <span className="text-sm text-gray-600">
-                  <span className="font-medium text-ink">Enable push notifications</span>
-                  <br />
-                  <span className="text-xs text-gray-400">Get alerts for new matches, swap updates, and messages</span>
-                </span>
-              </label>
-              <Button fullWidth loading={isRegistering} onClick={handleRegister}>
-                Create Account
-              </Button>
-              <p className="text-sm text-center text-gray-500">
-                Already have an account?{' '}
-                <button onClick={() => setMode('login')} className="text-primary font-medium">
-                  Sign in
-                </button>
-              </p>
-            </motion.div>
-          )}
+                <h2 className="text-white font-bold text-4xl leading-tight mb-4">
+                  {SLIDES[slide].title}
+                </h2>
+                <p className="text-white/70 text-lg leading-relaxed max-w-md">
+                  {SLIDES[slide].body}
+                </p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
 
-        </AnimatePresence>
+          {/* Dot indicators */}
+          <div className="flex gap-2 mt-12">
+            {SLIDES.map((_, i) => (
+              <button
+                key={i}
+                onClick={() => goSlide(i)}
+                className={`h-2 rounded-full transition-all duration-300 ${
+                  i === slide ? 'bg-white w-8' : 'bg-white/30 w-2'
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom tagline */}
+        <div className="relative z-10 px-12 pb-10">
+          <p className="text-white/50 text-sm">Nigeria's #1 Barter & Trade Marketplace</p>
+        </div>
       </div>
+
+      {/* ── Right panel: form ── */}
+      <div className="flex-1 flex flex-col bg-white overflow-y-auto">
+
+        {/* Mobile top bar */}
+        <div className="lg:hidden bg-primary px-6 pt-14 pb-8">
+          <div className="bg-white rounded-2xl px-4 py-2 inline-block mb-4">
+            <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-8 w-auto block" />
+          </div>
+          <p className="text-white/70 text-sm">Nigeria's #1 Barter & Trade Marketplace</p>
+        </div>
+
+        {/* Form container */}
+        <div className="flex-1 flex flex-col justify-center px-6 py-10 max-w-md w-full mx-auto lg:mx-0 lg:px-14 lg:py-0 lg:justify-center">
+
+          {/* Tab switcher */}
+          <div className="flex bg-gray-100 rounded-2xl p-1 mb-8">
+            {['login', 'register'].map(t => (
+              <button
+                key={t}
+                onClick={() => setMode(t)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  mode === t ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400'
+                }`}
+              >
+                {t === 'login' ? 'Sign In' : 'Register'}
+              </button>
+            ))}
+          </div>
+
+          <AnimatePresence mode="wait">
+
+            {/* ── Login ── */}
+            {mode === 'login' && (
+              <motion.div key="login" {...formSlide} className="space-y-5">
+                <div className="mb-2">
+                  <h2 className="font-bold text-2xl text-gray-900">Welcome back</h2>
+                  <p className="text-gray-500 mt-1 text-sm">Sign in to continue swapping</p>
+                </div>
+
+                <Input
+                  label="Email Address"
+                  type="email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  autoComplete="email"
+                />
+
+                <div className="relative">
+                  <Input
+                    label="Password"
+                    type={showPass ? 'text' : 'password'}
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder="Your password"
+                    autoComplete="current-password"
+                    onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
+                  />
+                  <button type="button" onClick={() => setShowPass(v => !v)}
+                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="flex justify-end -mt-2">
+                  <Link to="/forgot-password" className="text-xs text-primary hover:underline font-medium">
+                    Forgot password?
+                  </Link>
+                </div>
+
+                <Button fullWidth loading={isLoginOtpPending} onClick={handleLogin} disabled={!loginEmail.trim() || !loginPassword}>
+                  Continue
+                </Button>
+
+                <p className="text-xs text-center text-gray-400">
+                  We'll verify your credentials then send a 6-digit code to your email.
+                </p>
+              </motion.div>
+            )}
+
+            {/* ── Register ── */}
+            {mode === 'register' && (
+              <motion.div key="register" {...formSlide} className="space-y-4">
+                <div className="mb-2">
+                  <h2 className="font-bold text-2xl text-gray-900">Create account</h2>
+                  <p className="text-gray-500 mt-1 text-sm">Join thousands of swappers across Nigeria</p>
+                </div>
+
+                <Input label="Full Name" value={form.fullName}
+                  onChange={setField('fullName')} placeholder="Amaka Okafor" />
+                <Input label="Email Address" type="email" value={form.email}
+                  onChange={setField('email')} placeholder="you@example.com" />
+
+                <div className="relative">
+                  <Input label="Password" type={showPass ? 'text' : 'password'}
+                    value={form.password} onChange={setField('password')} placeholder="Min. 8 characters" />
+                  <button type="button" onClick={() => setShowPass(v => !v)}
+                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
+                    {showPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <div className="relative">
+                  <Input label="Confirm Password" type={showConfirmPass ? 'text' : 'password'}
+                    value={form.confirmPassword} onChange={setField('confirmPassword')} placeholder="Repeat password" />
+                  <button type="button" onClick={() => setShowConfirmPass(v => !v)}
+                    className="absolute right-3 top-9 text-gray-400 hover:text-gray-600">
+                    {showConfirmPass ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                <Input label="Phone Number (optional)" type="tel" value={form.phone}
+                  onChange={setField('phone')} placeholder="+2348012345678" />
+
+                <Button fullWidth loading={isRegistering} onClick={handleRegister}>
+                  Create Account
+                </Button>
+
+                <p className="text-xs text-center text-gray-400">
+                  Already have an account?{' '}
+                  <button onClick={() => setMode('login')} className="text-primary font-semibold">Sign in</button>
+                </p>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 pb-6 text-center lg:px-14 lg:text-left">
+          <p className="text-xs text-gray-400">
+            By continuing you agree to our{' '}
+            <span className="text-primary font-medium cursor-pointer">Terms of Service</span>
+            {' & '}
+            <span className="text-primary font-medium cursor-pointer">Privacy Policy</span>
+          </p>
+        </div>
+      </div>
+
     </div>
   );
 }

@@ -26,11 +26,8 @@ function DesktopSidebar() {
   return (
     <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-6 h-16 border-b border-gray-100">
-        <div className="w-8 h-8 bg-primary rounded-xl flex items-center justify-center">
-          <ArrowRightLeft size={16} className="text-white" />
-        </div>
-        <span className="font-display font-bold text-lg text-ink">SwapNaija</span>
+      <div className="flex items-center px-6 h-16 border-b border-gray-100">
+        <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-9 w-auto" />
       </div>
 
       {/* Nav links */}

@@ -57,76 +57,148 @@ const PRECAUTIONS = [
 function HeroBanner({ listing, compact }) {
   const imgSrc = listing.images?.[0] ? resolveImageUrl(listing.images[0]) : null;
 
+  // ── Mobile compact ────────────────────────────────────────────────────────
   if (compact) {
     return (
-      <div className="relative overflow-hidden px-4 py-4 bg-gradient-to-r from-primary/8 via-emerald-50 to-white border-b border-gray-100">
-        <div className="relative flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl overflow-hidden border border-gray-200 flex-none bg-gray-100">
+      <div className="relative overflow-hidden" style={{ minHeight: 120 }}>
+        {/* Blurred full-bleed background */}
+        {imgSrc && (
+          <img
+            src={imgSrc}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover scale-110"
+            style={{ filter: 'blur(18px)', transform: 'scale(1.15)' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }}
+          />
+        )}
+        <div className="absolute inset-0"
+          style={{ background: 'linear-gradient(135deg,rgba(0,0,0,0.62) 0%,rgba(0,0,0,0.38) 100%)' }} />
+
+        <div className="relative flex items-center gap-3.5 px-4 py-4">
+          {/* Listing image */}
+          <div className="w-14 h-14 rounded-2xl overflow-hidden flex-none ring-2 ring-white/30 shadow-lg bg-gray-800">
             {imgSrc ? (
               <img src={imgSrc} alt={listing.title} className="w-full h-full object-cover"
                 onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }} />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
-                <ArrowLeftRight size={16} className="text-gray-300" />
+                <ArrowLeftRight size={18} className="text-white/40" />
               </div>
             )}
           </div>
+
           <div className="flex-1 min-w-0">
-            <p className="text-xs text-gray-400 font-medium">Proposing swap for</p>
-            <p className="text-sm font-bold text-gray-900 truncate">{listing.title}</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-white/50 mb-0.5">Proposing swap for</p>
+            <p className="text-sm font-black text-white leading-tight truncate">{listing.title}</p>
             {listing.estimatedValue > 0 && (
-              <p className="text-xs text-primary font-semibold mt-0.5">{listing.estimatedValue.toLocaleString()} BC</p>
+              <p className="text-xs font-bold text-primary mt-0.5">{listing.estimatedValue.toLocaleString()} BC</p>
             )}
           </div>
-          <div className="flex-none">
-            <div className="flex items-center gap-1 bg-emerald-100 border border-emerald-200 rounded-full px-2 py-1">
-              <ShieldCheck size={10} className="text-emerald-600" />
-              <span className="text-xs text-emerald-700 font-semibold whitespace-nowrap">Escrow Safe</span>
-            </div>
+
+          <div className="flex items-center gap-1 bg-emerald-500/25 border border-emerald-400/40 rounded-full px-2.5 py-1 flex-none">
+            <ShieldCheck size={11} className="text-emerald-300" />
+            <span className="text-[11px] text-emerald-200 font-bold whitespace-nowrap">Escrow Safe</span>
           </div>
         </div>
       </div>
     );
   }
 
+  // ── Desktop full hero ─────────────────────────────────────────────────────
   return (
-    <div className="relative overflow-hidden rounded-2xl mb-6 bg-gradient-to-br from-primary/8 via-emerald-50/60 to-white border border-primary/15">
-      <div className="pointer-events-none absolute -top-8 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl" />
-      <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 opacity-5">
-        <ArrowLeftRight size={120} className="text-primary" />
-      </div>
+    <div className="relative overflow-hidden rounded-3xl mb-6" style={{ minHeight: 200 }}>
+      {/* Blurred background image */}
+      {imgSrc && (
+        <img
+          src={imgSrc}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ filter: 'blur(22px)', transform: 'scale(1.12)' }}
+          onError={e => { e.currentTarget.style.display = 'none'; }}
+        />
+      )}
 
-      <div className="relative px-8 py-7 flex items-center gap-6">
-        <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-white flex-none bg-gray-100 shadow-md">
-          {imgSrc ? (
-            <img src={imgSrc} alt={listing.title} className="w-full h-full object-cover"
-              onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }} />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <ArrowLeftRight size={28} className="text-gray-300" />
-            </div>
-          )}
+      {/* Overlay gradient */}
+      <div
+        className="absolute inset-0"
+        style={{ background: imgSrc
+          ? 'linear-gradient(120deg,rgba(0,0,0,0.72) 0%,rgba(0,0,0,0.45) 60%,rgba(0,0,0,0.28) 100%)'
+          : 'linear-gradient(120deg,#0d2818 0%,#0a3d1f 50%,#052e16 100%)'
+        }}
+      />
+
+      {/* Subtle grid texture overlay */}
+      <div className="absolute inset-0 opacity-[0.04]"
+        style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 31px,rgba(255,255,255,1) 31px,rgba(255,255,255,1) 32px),repeating-linear-gradient(90deg,transparent,transparent 31px,rgba(255,255,255,1) 31px,rgba(255,255,255,1) 32px)' }}
+      />
+
+      {/* Glow accent */}
+      <div className="pointer-events-none absolute -bottom-10 right-20 w-64 h-64 rounded-full bg-primary/30 blur-3xl" />
+
+      {/* Content */}
+      <div className="relative flex items-center gap-7 px-8 py-8">
+
+        {/* Large listing image */}
+        <div className="relative flex-none">
+          <div className="w-28 h-28 rounded-2xl overflow-hidden ring-4 ring-white/20 shadow-2xl bg-gray-800">
+            {imgSrc ? (
+              <img src={imgSrc} alt={listing.title} className="w-full h-full object-cover"
+                onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }} />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <ArrowLeftRight size={36} className="text-white/20" />
+              </div>
+            )}
+          </div>
+          {/* Escrow dot */}
+          <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-emerald-500 rounded-full flex items-center justify-center ring-2 ring-white/30 shadow-lg">
+            <ShieldCheck size={13} className="text-white" />
+          </div>
         </div>
 
+        {/* Text block */}
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-gray-400 font-semibold uppercase tracking-widest mb-1">Proposing a swap for</p>
-          <h2 className="text-xl font-display font-black text-gray-900 leading-tight truncate">{listing.title}</h2>
-          {listing.userId && (
-            <p className="text-sm text-gray-400 mt-0.5">
-              by <span className="text-gray-700 font-medium">{listing.userId.fullName || 'Unknown'}</span>
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">Proposing a swap for</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <h2 className="font-display font-black text-white leading-tight mb-1.5"
+            style={{ fontSize: 'clamp(1.25rem,3vw,1.75rem)' }}>
+            {listing.title}
+          </h2>
+
+          {listing.userId?.fullName && (
+            <p className="text-sm text-white/50 mb-3">
+              Listed by <span className="text-white/80 font-semibold">{listing.userId.fullName}</span>
             </p>
           )}
-          <div className="flex items-center gap-3 mt-2.5 flex-wrap">
+
+          <div className="flex flex-wrap gap-2">
             {listing.estimatedValue > 0 && (
-              <span className="text-sm font-black text-primary bg-primary/10 border border-primary/20 px-3 py-1 rounded-full">
-                {listing.estimatedValue.toLocaleString()} BC
+              <span className="inline-flex items-center gap-1.5 font-black text-sm text-white bg-white/15 border border-white/20 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                {listing.estimatedValue.toLocaleString()}
+                <span className="text-white/60 font-normal">BC</span>
               </span>
             )}
-            <div className="flex items-center gap-1.5 bg-emerald-100 border border-emerald-200 rounded-full px-3 py-1">
-              <ShieldCheck size={12} className="text-emerald-600" />
-              <span className="text-xs text-emerald-700 font-semibold">Escrow Protected · Safe Trade</span>
-            </div>
+
+            {listing.categoryId?.name && (
+              <span className="inline-flex items-center text-xs font-semibold text-white/70 bg-white/10 border border-white/10 px-3 py-1.5 rounded-full">
+                {listing.categoryId.name}
+              </span>
+            )}
+
+            <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-300 bg-emerald-500/20 border border-emerald-400/30 px-3 py-1.5 rounded-full">
+              <ShieldCheck size={11} />
+              Escrow Protected
+            </span>
           </div>
+        </div>
+
+        {/* Right decorative ArrowLeftRight */}
+        <div className="hidden xl:flex items-center justify-center w-16 h-16 rounded-2xl bg-white/8 border border-white/10 flex-none">
+          <ArrowLeftRight size={28} className="text-white/30" />
         </div>
       </div>
     </div>

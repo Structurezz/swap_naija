@@ -276,7 +276,7 @@ export default function Onboarding() {
                   </button>
                 </div>
 
-                <Input label="Phone Number (optional)" type="tel" value={form.phone}
+                <Input label="Phone Number" type="tel" value={form.phone}
                   onChange={setField('phone')} placeholder="+2348012345678" />
 
                 <Button fullWidth loading={isRegistering} onClick={handleRegister}>

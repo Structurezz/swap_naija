@@ -4,6 +4,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { topupWallet, verifyPayment, getPaymentHistory } from '../api/payments.api';
+import { getMySwaps } from '../api/swaps.api';
 import { useAuthStore } from '../store/auth.store';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
@@ -12,9 +13,11 @@ import {
   ArrowDownLeft, Wallet as WalletIcon, X,
   CheckCircle2, Clock3, XCircle, Bell, Settings,
   ChevronRight, ArrowUpRight, Delete,
+  ArrowLeftRight, Package, AlertTriangle, Star, TrendingUp,
 } from 'lucide-react';
 import { formatBC } from '../utils/currency';
 import { format, isToday, isYesterday } from 'date-fns';
+import { resolveImageUrl, IMAGE_FALLBACK_SRC } from '../utils/placeholder';
 
 const TYPE_META = {
   topup:        { label: 'Barter Credit Top-up',  icon: ArrowDownLeft, credit: true  },
@@ -156,6 +159,185 @@ function QuickActions({ onAdd }) {
           ? <Link key={label} to={to} className={wrap}>{btn}</Link>
           : <button key={label} onClick={onClick} className={wrap}>{btn}</button>;
       })}
+    </div>
+  );
+}
+
+// ─── Swap Activity Scroll ─────────────────────────────────────────────────────
+const SWAP_STATUS_CFG = {
+  proposed:  { label: 'Proposed',  dot: '#94a3b8', cls: 'bg-slate-100 text-slate-500',    Icon: Clock3         },
+  accepted:  { label: 'Accepted',  dot: '#7c3aed', cls: 'bg-violet-100 text-violet-600',  Icon: CheckCircle2   },
+  in_escrow: { label: 'In Escrow', dot: '#2563eb', cls: 'bg-blue-100 text-blue-600',      Icon: ShieldCheck    },
+  shipped:   { label: 'Shipped',   dot: '#d97706', cls: 'bg-amber-100 text-amber-600',    Icon: Package        },
+  completed: { label: 'Completed', dot: '#10b981', cls: 'bg-emerald-100 text-emerald-600',Icon: CheckCircle2   },
+  cancelled: { label: 'Cancelled', dot: '#94a3b8', cls: 'bg-slate-100 text-slate-400',    Icon: XCircle        },
+  disputed:  { label: 'Disputed',  dot: '#ef4444', cls: 'bg-red-100 text-red-500',        Icon: AlertTriangle  },
+};
+
+function SwapCard({ swap, userId, index }) {
+  const isInitiator  = swap.initiatorId?.id === userId;
+  const myListing    = isInitiator ? swap.initiatorListing : swap.receiverListing;
+  const theirListing = isInitiator ? swap.receiverListing  : swap.initiatorListing;
+  const partner      = isInitiator ? swap.receiverId : swap.initiatorId;
+
+  const cfg      = SWAP_STATUS_CFG[swap.status] || SWAP_STATUS_CFG.proposed;
+  const myImg    = myListing?.images?.[0]    ? resolveImageUrl(myListing.images[0])    : null;
+  const theirImg = theirListing?.images?.[0] ? resolveImageUrl(theirListing.images[0]) : null;
+  const bgImg    = myImg || theirImg;
+  const topVal   = Math.max(myListing?.estimatedValue || 0, theirListing?.estimatedValue || 0);
+  const valLabel = topVal >= 1000
+    ? `${(topVal / 1000).toFixed(topVal % 1000 === 0 ? 0 : 1)}k`
+    : topVal > 0 ? String(topVal) : null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 28 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.32, delay: index * 0.07, ease: 'easeOut' }}
+      whileHover={{ y: -3, transition: { duration: 0.14 } }}
+      whileTap={{ scale: 0.97 }}
+      className="w-[188px] bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm"
+    >
+      {/* Blurred image header */}
+      <div className="relative h-[66px] overflow-hidden bg-gray-200">
+        {bgImg && (
+          <img src={bgImg} alt="" aria-hidden
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ filter: 'blur(9px)', transform: 'scale(1.3)' }}
+            onError={e => { e.currentTarget.style.display = 'none'; }}
+          />
+        )}
+        <div className="absolute inset-0 bg-black/48" />
+
+        {/* Status dot + label */}
+        <div className="absolute top-2 left-2.5 flex items-center gap-1.5">
+          <span className="w-[7px] h-[7px] rounded-full flex-none" style={{ backgroundColor: cfg.dot }} />
+          <span className="text-[9px] font-black text-white/80 uppercase tracking-wide">{cfg.label}</span>
+        </div>
+
+        {/* Two item thumbnails + arrow — centered */}
+        <div className="absolute inset-0 flex items-center justify-center gap-2">
+          <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white/50 bg-gray-700 shadow-lg flex-none">
+            {myImg
+              ? <img src={myImg} alt="" className="w-full h-full object-cover" onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }} />
+              : <div className="w-full h-full flex items-center justify-center"><Package size={14} className="text-white/30" /></div>
+            }
+          </div>
+          <div className="w-[22px] h-[22px] rounded-full bg-white/90 flex items-center justify-center shadow-sm flex-none">
+            <ArrowLeftRight size={9} className="text-gray-600" />
+          </div>
+          <div className="w-10 h-10 rounded-xl overflow-hidden ring-2 ring-white/50 bg-gray-700 shadow-lg flex-none">
+            {theirImg
+              ? <img src={theirImg} alt="" className="w-full h-full object-cover" onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }} />
+              : <div className="w-full h-full flex items-center justify-center"><Package size={14} className="text-white/30" /></div>
+            }
+          </div>
+        </div>
+      </div>
+
+      {/* Card body */}
+      <div className="p-3 space-y-2">
+        {/* Item titles */}
+        <div>
+          <p className="text-[12px] font-bold text-gray-900 leading-tight truncate">
+            {myListing?.title || 'Open offer'}
+          </p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <ArrowLeftRight size={8} className="text-gray-300 flex-none" />
+            <p className="text-[10px] text-gray-400 truncate leading-tight">
+              {theirListing?.title || 'Any item'}
+            </p>
+          </div>
+        </div>
+
+        {/* Partner */}
+        {partner && (
+          <div className="flex items-center gap-1.5">
+            <div className="w-[18px] h-[18px] rounded-full bg-primary/15 flex items-center justify-center flex-none">
+              <span className="text-[8px] font-black text-primary leading-none">
+                {partner.fullName?.[0]?.toUpperCase() || '?'}
+              </span>
+            </div>
+            <p className="text-[11px] text-gray-500 font-medium truncate flex-1 min-w-0">
+              {partner.fullName?.split(' ')[0] || 'User'}
+            </p>
+            {(partner.ratingAvg || 0) > 0 && (
+              <div className="flex items-center gap-0.5 flex-none">
+                <Star size={9} className="text-amber-400 fill-amber-400" />
+                <span className="text-[10px] text-gray-400 font-semibold">{partner.ratingAvg.toFixed(1)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Status badge + value */}
+        <div className="flex items-center justify-between gap-1">
+          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold ${cfg.cls}`}>
+            <cfg.Icon size={8} />
+            {cfg.label}
+          </span>
+          {valLabel && (
+            <span className="text-[11px] font-bold text-gray-700">{valLabel} BC</span>
+          )}
+        </div>
+
+        {/* Date */}
+        <p className="text-[10px] text-gray-300 font-medium">
+          {format(new Date(swap.createdAt), 'dd MMM yyyy')}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function BigSwapsScroll({ userId }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['my-swaps-highlight'],
+    queryFn: () => getMySwaps(undefined, 1, 10),
+    staleTime: 60_000,
+  });
+
+  const swaps = data?.swaps ?? [];
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center gap-1.5">
+          <TrendingUp size={13} className="text-primary" />
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Swap Activity</p>
+        </div>
+        <div className="flex gap-3 overflow-hidden -mx-4 px-4">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="w-[188px] flex-none h-[172px] bg-white rounded-2xl border border-gray-100 animate-pulse" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!swaps.length) return null;
+
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-2.5">
+        <div className="flex items-center gap-1.5">
+          <TrendingUp size={13} className="text-primary" />
+          <p className="text-[11px] font-bold text-gray-400 uppercase tracking-widest">Swap Activity</p>
+        </div>
+        <Link to="/swaps" className="text-xs text-primary font-semibold flex items-center gap-0.5 hover:underline">
+          See all <ArrowUpRight size={11} />
+        </Link>
+      </div>
+      <div
+        className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {swaps.map((swap, i) => (
+          <Link key={swap.id} to={`/swaps/${swap.id}`} className="flex-none">
+            <SwapCard swap={swap} userId={userId} index={i} />
+          </Link>
+        ))}
+      </div>
     </div>
   );
 }
@@ -534,6 +716,7 @@ export default function Wallet() {
             <VirtualCard balance={walletBalance} user={user} hidden={hidden} onToggleHide={() => setHidden(h => !h)} />
             <QuickActions onAdd={() => setModalOpen(true)} />
             <StatStrip user={user} />
+            <BigSwapsScroll userId={user?.id} />
           </div>
           {/* Right col — transactions (desktop) */}
           <div className="hidden lg:block">

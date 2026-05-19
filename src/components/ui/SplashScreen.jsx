@@ -1,24 +1,17 @@
 import { useEffect, useState } from 'react';
-import { ArrowRightLeft } from 'lucide-react';
 
-/**
- * Full-screen splash shown while the app initialises.
- * Fades out once `ready` is true (auth init complete).
- */
 export default function SplashScreen({ ready }) {
   const [fadeOut, setFadeOut] = useState(false);
   const [gone,    setGone]    = useState(false);
 
   useEffect(() => {
     if (!ready) return;
-    // Show for at least 2.8 s so all animations play and users can read it
     const t = setTimeout(() => setFadeOut(true), 2800);
     return () => clearTimeout(t);
   }, [ready]);
 
   useEffect(() => {
     if (!fadeOut) return;
-    // Remove from DOM after the fade-out transition ends (600 ms)
     const t = setTimeout(() => setGone(true), 600);
     return () => clearTimeout(t);
   }, [fadeOut]);
@@ -27,74 +20,69 @@ export default function SplashScreen({ ready }) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-primary"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-white"
       style={{
         transition: 'opacity 0.6s ease',
         opacity: fadeOut ? 0 : 1,
         pointerEvents: fadeOut ? 'none' : 'auto',
       }}
     >
-      {/* ── Logo mark ── */}
-      <div
-        className="flex flex-col items-center"
-        style={{ animation: 'splashLogoIn 0.6s cubic-bezier(0.34,1.56,0.64,1) both' }}
+      <svg
+        viewBox="0 0 300 68"
+        width="300"
+        height="68"
+        xmlns="http://www.w3.org/2000/svg"
+        overflow="visible"
       >
-        {/* Icon circle */}
-        <div className="w-24 h-24 rounded-3xl bg-white/15 flex items-center justify-center mb-5 shadow-2xl">
-          <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center">
-            <ArrowRightLeft size={32} className="text-primary" strokeWidth={2.5} />
-          </div>
-        </div>
+        {/* ── Green rounded box ── */}
+        <g style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: 'boxPop 0.55s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+          <rect x="0" y="0" width="68" height="68" rx="15" fill="#62C6A0" />
+        </g>
 
-        {/* Wordmark */}
-        <h1 className="font-display font-bold text-4xl text-white tracking-tight leading-none">
+        {/* ── Swap arrows (ArrowRightLeft, 24×24 → scaled to 38×38, centred in 68×68) ── */}
+        <g
+          transform="translate(15, 15) scale(1.583)"
+          stroke="white"
+          strokeWidth="1.7"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="none"
+          style={{ animation: 'arrowDraw 0.45s 0.4s ease both' }}
+        >
+          {/* right arrow */}
+          <polyline points="16,3 20,7 16,11" />
+          <line x1="4" y1="7" x2="20" y2="7" />
+          {/* left arrow */}
+          <polyline points="8,21 4,17 8,13" />
+          <line x1="4" y1="17" x2="20" y2="17" />
+        </g>
+
+        {/* ── "SwapNaija" wordmark ── */}
+        <text
+          x="84"
+          y="48"
+          fontFamily="Sora, 'DM Sans', sans-serif"
+          fontWeight="700"
+          fontSize="38"
+          fill="#111827"
+          style={{ transformBox: 'fill-box', transformOrigin: 'left center', animation: 'textSlide 0.5s 0.55s ease both' }}
+        >
           SwapNaija
-        </h1>
-      </div>
+        </text>
+      </svg>
 
-      {/* ── Slogan ── */}
-      <p
-        className="mt-4 text-white/80 text-base font-medium tracking-wide"
-        style={{ animation: 'splashFadeUp 0.5s 0.5s ease both' }}
-      >
-        Modernizing trade by barter
-      </p>
-
-      {/* ── Loading bar ── */}
-      <div
-        className="mt-10 w-40 h-1 rounded-full bg-white/20 overflow-hidden"
-        style={{ animation: 'splashFadeUp 0.5s 0.6s ease both' }}
-      >
-        <div
-          className="h-full rounded-full bg-white"
-          style={{ animation: 'splashBar 2.4s 0.7s ease-in-out both' }}
-        />
-      </div>
-
-      {/* ── Footer ── */}
-      <div
-        className="absolute bottom-10 flex flex-col items-center gap-1"
-        style={{ animation: 'splashFadeUp 0.5s 0.8s ease both' }}
-      >
-        <p className="text-white/40 text-xs uppercase tracking-widest font-medium">Powered by</p>
-        <p className="text-white/70 text-sm font-display font-semibold tracking-wide">
-          Structurezz Technologies
-        </p>
-      </div>
-
-      {/* Keyframe definitions injected inline so they work without a global CSS file change */}
       <style>{`
-        @keyframes splashLogoIn {
-          from { opacity: 0; transform: scale(0.7) translateY(16px); }
-          to   { opacity: 1; transform: scale(1)   translateY(0);    }
+        @keyframes boxPop {
+          from { transform: scale(0); opacity: 0; }
+          to   { transform: scale(1); opacity: 1; }
         }
-        @keyframes splashFadeUp {
-          from { opacity: 0; transform: translateY(12px); }
-          to   { opacity: 1; transform: translateY(0);    }
+        @keyframes arrowDraw {
+          from { opacity: 0; transform: translate(15px,15px) scale(1.583) scale(0.6); }
+          to   { opacity: 1; transform: translate(15px,15px) scale(1.583) scale(1); }
         }
-        @keyframes splashBar {
-          from { width: 0%;   }
-          to   { width: 100%; }
+        @keyframes textSlide {
+          from { opacity: 0; transform: translateX(18px); }
+          to   { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

@@ -1003,7 +1003,7 @@ export default function MySwaps() {
           </div>
           <Input label="Tracking Number" placeholder="e.g. GIG-1234567890" value={shipmentForm.trackingNumber}
             onChange={e => setShipmentForm(p => ({ ...p, trackingNumber: e.target.value }))} />
-          <Input label="Tracking URL (optional)" placeholder="https://..." value={shipmentForm.trackingUrl}
+          <Input label="Tracking URL (optional)" placeholder="e.g. track.gigl.com/abc123" value={shipmentForm.trackingUrl}
             onChange={e => setShipmentForm(p => ({ ...p, trackingUrl: e.target.value }))} />
           <div>
             <label className="block text-sm font-medium mb-1">Notes (optional)</label>

@@ -63,21 +63,21 @@ const WHAT_FEATURED_MEANS = [
 
 function FeaturedHero({ total, isLoading }) {
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-[#1a0e00] via-[#2b1800] to-[#0f0800]">
+    <div className="relative overflow-hidden bg-gradient-to-br from-[#04091f] via-[#080f35] to-[#020512]">
       {/* Glows */}
-      <div className="pointer-events-none absolute -top-16 -right-16 w-72 h-72 rounded-full bg-amber-500/20 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-10 left-10 w-48 h-48 rounded-full bg-orange-400/15 blur-2xl" />
-      <div className="pointer-events-none absolute top-1/2 right-1/3 w-24 h-24 rounded-full bg-yellow-300/10 blur-xl" />
+      <div className="pointer-events-none absolute -top-16 -right-16 w-72 h-72 rounded-full bg-blue-500/20 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-10 left-10 w-48 h-48 rounded-full bg-indigo-500/15 blur-2xl" />
+      <div className="pointer-events-none absolute top-1/2 right-1/3 w-24 h-24 rounded-full bg-sky-300/10 blur-xl" />
 
       {/* Floating decoration */}
       <div className="pointer-events-none absolute right-6 top-1/2 -translate-y-1/2 opacity-10 lg:opacity-15">
-        <Star size={140} className="text-amber-300" />
+        <Star size={140} className="text-blue-300" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-5 py-7 lg:px-10 lg:py-10">
+      <div className="relative w-full px-4 py-7 lg:px-8 lg:py-10">
         {/* Badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-4 backdrop-blur-sm">
-          <Star size={12} className="text-amber-300" fill="#fde68a" />
+          <Star size={12} className="text-blue-300" fill="#93c5fd" />
           Hand-picked & boosted listings · Highest quality on SwapNaija
         </div>
 

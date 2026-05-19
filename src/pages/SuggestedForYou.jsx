@@ -66,7 +66,7 @@ function AiHero({ total, isLoading }) {
         <Brain size={140} className="text-white" />
       </div>
 
-      <div className="relative max-w-5xl mx-auto px-5 py-7 lg:px-10 lg:py-10">
+      <div className="relative w-full px-4 py-7 lg:px-8 lg:py-10">
 
         {/* AI badge */}
         <div className="inline-flex items-center gap-2 bg-white/10 border border-white/20 text-white text-xs font-semibold px-3 py-1.5 rounded-full mb-4 backdrop-blur-sm">

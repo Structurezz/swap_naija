@@ -67,7 +67,7 @@ function KycForm({ onClose, onSuccess }) {
   const mutation = useMutation({
     mutationFn: () => submitKyc({ idType, idNumber, docUrl: docData }),
     onSuccess: (data) => {
-      toast.success("KYC submitted! We'll review within 24–48 hours.");
+      toast.success('KYC submitted! Your verification is being processed.');
       onSuccess(data);
       onClose();
     },
@@ -290,7 +290,7 @@ export default function VerifyAccount() {
         <h3 className="font-display font-bold text-xl relative">Premium Verified</h3>
         <p className="text-sm opacity-80 mt-0.5 relative">Gold badge · Maximum trust</p>
         <div className="mt-4 bg-white/15 rounded-2xl px-4 py-3 relative">
-          <p className="text-sm opacity-80">ID verification — 24–48 hr review</p>
+          <p className="text-sm opacity-80">ID verification — usually within minutes</p>
         </div>
       </div>
 
@@ -390,7 +390,7 @@ export default function VerifyAccount() {
         {/* Disclaimer */}
         <div className="flex items-start gap-2 text-xs text-gray-400 px-1">
           <Lock size={12} className="flex-none mt-0.5" />
-          <p>Standard verification deducts 1,000 BC from your SwapNaija wallet. Premium KYC is free and reviewed within 24–48 hours.</p>
+          <p>Standard verification deducts 1,000 BC from your SwapNaija wallet. Premium KYC is free and usually verified within minutes.</p>
         </div>
       </div>
 
@@ -400,7 +400,7 @@ export default function VerifyAccount() {
           <div className="flex items-center gap-2 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3 mb-8">
             <Crown size={15} className="text-amber-600 flex-none" />
             <p className="text-sm text-amber-700">
-              <strong>Premium is free</strong> — just submit a government-issued ID. Our team reviews within 24–48 hours.
+              <strong>Premium is free</strong> — just submit a government-issued ID. Verification usually completes within minutes.
             </p>
           </div>
         )}
@@ -424,7 +424,7 @@ export default function VerifyAccount() {
 
         <div className="flex items-start gap-2 text-xs text-gray-400 mt-6">
           <Lock size={12} className="flex-none mt-0.5" />
-          <p>Standard verification deducts 1,000 BC from your wallet. Premium KYC is free and reviewed within 24–48 hours. No card details are stored.</p>
+          <p>Standard verification deducts 1,000 BC from your wallet. Premium KYC is free and usually verified within minutes. No card details are stored.</p>
         </div>
       </div>
 

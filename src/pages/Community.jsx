@@ -198,7 +198,7 @@ export default function Community() {
     <div className="bg-bg min-h-screen pb-16">
       <TopBar title="Community" showBack />
 
-      <div className="max-w-md lg:max-w-5xl mx-auto px-4 lg:px-8">
+      <div className="w-full px-4 lg:px-8">
 
         {/* ─── Hero ─────────────────────────────────────────────────────── */}
         <motion.div

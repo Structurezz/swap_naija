@@ -1,19 +1,23 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { getMyListings } from '../../../api/listings.api';
 import { proposeSwap } from '../../../api/swaps.api';
 import { useAuthStore } from '../../../store/auth.store';
 import Button from '../../ui/Button';
+import Spinner from '../../ui/Spinner';
 import Avatar from '../../ui/Avatar';
 import { IMAGE_FALLBACK_SRC, resolveImageUrl } from '../../../utils/placeholder';
 import { formatBC } from '../../../utils/currency';
 import {
   ArrowLeftRight, Coins, Shield, AlertCircle,
   CheckCircle2, ChevronDown, Info, Wallet, ArrowDown,
+  ChevronLeft, ChevronRight, Plus,
 } from 'lucide-react';
+
+const PICKER_LIMIT = 6;
 
 const COLLATERAL_OPTIONS = [
   { value: 5,  label: '5%',  desc: 'Low' },
@@ -67,20 +71,25 @@ function ListingCard({ listing, label, highlight }) {
 function SwapProposal({ listing, currentUserId }) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
-  const { register, handleSubmit, watch } = useForm();
+  const { register, handleSubmit } = useForm();
   const [topUpPayerRole, setTopUpPayerRole] = useState('none');
   const [collateralPct, setCollateralPct]   = useState(10);
 
   const walletBalance = user?.walletBalance ?? 0; // in kobo
 
-  const { data: myListingsData } = useQuery({
-    queryKey: ['my-listings', 1, 'active'],
-    queryFn:  () => getMyListings({ status: 'active', page: 1, limit: 100 }),
+  const [pickerPage, setPickerPage] = useState(1);
+  const { data: pickerData, isLoading: pickerLoading } = useQuery({
+    queryKey: ['my-listings-picker', pickerPage],
+    queryFn:  () => getMyListings({ page: pickerPage, limit: PICKER_LIMIT }),
+    keepPreviousData: true,
   });
-  const myListings = myListingsData?.listings ?? [];
+  const pickerListings = pickerData?.listings ?? [];
+  const pickerTotal    = pickerData?.total ?? 0;
+  const pickerPages    = pickerData?.pages ?? 1;
 
-  const selectedListingId = watch('initiatorListing');
-  const selectedListing   = myListings?.find(l => l.id === selectedListingId);
+  const [selectedListingId, setSelectedListingId] = useState('');
+  // keep a local cache of selected listing object across pages
+  const [selectedListing, setSelectedListing] = useState(null);
 
   const receiverValue  = listing.estimatedValue  || 0;   // Naira
   const initiatorValue = selectedListing?.estimatedValue || 0; // Naira
@@ -120,7 +129,7 @@ function SwapProposal({ listing, currentUserId }) {
     mutation.mutate({
       receiverId:       listing.userId?.id,
       receiverListing:  listing.id,
-      initiatorListing: data.initiatorListing || undefined,
+      initiatorListing: selectedListingId || undefined,
       proposalNote:     data.proposalNote,
       collateralPercent: collateralPct,
       topUpAmountKobo,
@@ -161,43 +170,131 @@ function SwapProposal({ listing, currentUserId }) {
         )}
       </div>
 
-      {/* ── 2. Listing selector ──────────────────────────────────────────── */}
-      {myListings?.length > 0 ? (
-        <div className="space-y-2">
-          <label className="block text-sm font-medium">Offer one of your listings</label>
-          <select {...register('initiatorListing')} className="input-field">
-            <option value="">— Nothing specific (service / open offer) —</option>
-            {myListings.map(l => (
-              <option key={l.id} value={l.id}>
-                {l.title}{l.estimatedValue ? ` · ${l.estimatedValue.toLocaleString()} BC` : ''}
-              </option>
-            ))}
-          </select>
-
-          {minSwapValue > 0 && !selectedListing && (
-            <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
-              <Info size={13} className="text-amber-600 flex-none mt-0.5" />
-              <p className="text-xs text-amber-800">
-                This listing requires a swap item worth at least{' '}
-                <span className="font-bold">{minSwapValue.toLocaleString()} BC</span>.
-              </p>
-            </div>
-          )}
-          {minSwapValue > 0 && selectedListing && !meetsThreshold && (
-            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
-              <AlertCircle size={13} className="text-red-500 flex-none mt-0.5" />
-              <p className="text-xs text-red-700">
-                Your item ({initiatorValue.toLocaleString()} BC) is below the{' '}
-                <span className="font-bold">{minSwapValue.toLocaleString()} BC</span> minimum.
-              </p>
-            </div>
-          )}
+      {/* ── 2. Listing picker ────────────────────────────────────────────── */}
+      <div className="card space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">What will you offer?</p>
+            {!pickerLoading && pickerTotal > 0 && (
+              <p className="text-xs text-gray-400 mt-0.5">{pickerTotal} listing{pickerTotal !== 1 ? 's' : ''} available</p>
+            )}
+          </div>
+          <Link to="/create" className="flex items-center gap-1 text-xs text-primary font-semibold bg-primary/8 hover:bg-primary/15 px-2.5 py-1.5 rounded-lg transition">
+            <Plus size={12} /> New
+          </Link>
         </div>
-      ) : (
-        <div className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
-          <p className="text-sm text-gray-500">
-            You have no active listings.{' '}
-            <a href="/create-listing" className="text-primary font-medium">Create one first →</a>
+
+        {/* "Nothing / open offer" option */}
+        <button
+          type="button"
+          onClick={() => { setSelectedListingId(''); setSelectedListing(null); }}
+          className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 border-2 transition text-left ${
+            !selectedListingId
+              ? 'border-primary bg-primary/5'
+              : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+          }`}
+        >
+          <div className="w-10 h-10 rounded-lg bg-gray-200 flex items-center justify-center flex-none">
+            <ArrowLeftRight size={16} className="text-gray-400" />
+          </div>
+          <div>
+            <p className={`text-sm font-semibold ${!selectedListingId ? 'text-primary' : 'text-gray-700'}`}>Open offer / service</p>
+            <p className="text-xs text-gray-400">No specific item — describe in the note below</p>
+          </div>
+          {!selectedListingId && <CheckCircle2 size={16} className="text-primary ml-auto flex-none" />}
+        </button>
+
+        {/* Listing cards */}
+        {pickerLoading ? (
+          <div className="flex justify-center py-6"><Spinner /></div>
+        ) : pickerListings.length === 0 && pickerTotal === 0 ? (
+          <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl px-4 py-5 text-center">
+            <p className="text-sm text-gray-500 mb-2">You have no listings yet.</p>
+            <Link to="/create" className="text-xs text-primary font-semibold">Create a listing first →</Link>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {pickerListings.map(l => {
+              const isSelected = selectedListingId === l.id;
+              return (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => { setSelectedListingId(l.id); setSelectedListing(l); }}
+                  className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 border-2 transition text-left ${
+                    isSelected
+                      ? 'border-primary bg-primary/5'
+                      : 'border-gray-100 bg-gray-50 hover:border-gray-200'
+                  }`}
+                >
+                  {l.images?.[0] ? (
+                    <img
+                      src={resolveImageUrl(l.images[0])}
+                      alt={l.title}
+                      className="w-12 h-12 rounded-lg object-cover flex-none"
+                      onError={e => { e.currentTarget.src = IMAGE_FALLBACK_SRC; }}
+                    />
+                  ) : (
+                    <div className="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center flex-none text-gray-400 text-xs">No img</div>
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-semibold truncate ${isSelected ? 'text-primary' : 'text-gray-800'}`}>{l.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      {l.estimatedValue ? `${l.estimatedValue.toLocaleString()} BC` : 'No value set'}
+                      {l.status && l.status !== 'active' && (
+                        <span className="ml-2 text-amber-500 capitalize">{l.status}</span>
+                      )}
+                    </p>
+                  </div>
+                  {isSelected && <CheckCircle2 size={16} className="text-primary flex-none" />}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {pickerPages > 1 && (
+          <div className="flex items-center justify-between pt-1">
+            <p className="text-xs text-gray-400">Page {pickerPage} of {pickerPages}</p>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => setPickerPage(p => Math.max(1, p - 1))}
+                disabled={pickerPage === 1}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setPickerPage(p => Math.min(pickerPages, p + 1))}
+                disabled={pickerPage === pickerPages}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-gray-400 hover:bg-gray-100 disabled:opacity-30 transition"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Validation hints */}
+      {minSwapValue > 0 && !selectedListing && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+          <Info size={13} className="text-amber-600 flex-none mt-0.5" />
+          <p className="text-xs text-amber-800">
+            This listing requires a swap item worth at least{' '}
+            <span className="font-bold">{minSwapValue.toLocaleString()} BC</span>.
+          </p>
+        </div>
+      )}
+      {minSwapValue > 0 && selectedListing && !meetsThreshold && (
+        <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2">
+          <AlertCircle size={13} className="text-red-500 flex-none mt-0.5" />
+          <p className="text-xs text-red-700">
+            Your item ({initiatorValue.toLocaleString()} BC) is below the{' '}
+            <span className="font-bold">{minSwapValue.toLocaleString()} BC</span> minimum.
           </p>
         </div>
       )}

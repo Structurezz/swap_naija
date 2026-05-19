@@ -6,7 +6,8 @@ import {
   Users, Star, MapPin, ShieldCheck, Zap, MessageCircle,
   ChevronDown, ArrowRightLeft, Award, TrendingUp, Heart,
   CheckCircle, AlertCircle, Gift, BookOpen, Shield, Flame,
-  Globe, Clock, ThumbsUp, BadgeCheck,
+  Globe, Clock, ThumbsUp, BadgeCheck, Newspaper, Sprout,
+  Lightbulb, BarChart2, ArrowRight,
 } from 'lucide-react';
 import TopBar from '../components/layout/TopBar';
 import Avatar from '../components/ui/Avatar';
@@ -110,6 +111,167 @@ const ACTIVITY = [
   { avatar: null, name: 'Bello K.',    location: 'Kaduna',       action: 'completed a swap',   item: 'Photography Session ↔ Brand Shoes (UK 10)',    time: '31m ago' },
 ];
 
+const ARTICLE_CATS = [
+  { id: 'all',       label: 'All',            icon: Newspaper  },
+  { id: 'agric',     label: 'Agriculture',    icon: Sprout     },
+  { id: 'success',   label: 'Success Stories',icon: Star       },
+  { id: 'tips',      label: 'Tips',           icon: Lightbulb  },
+  { id: 'market',    label: 'Market',         icon: BarChart2  },
+];
+
+const ARTICLES = [
+  {
+    id: 1,
+    category: 'agric',
+    categoryLabel: 'Agriculture',
+    emoji: '🌽',
+    gradient: 'from-green-600 to-emerald-500',
+    featured: true,
+    title: 'Kano Farmer Swaps 200 Bags of Maize for Irrigation Pumps — and Triples His Yield',
+    excerpt: 'Musa Abdullahi, a smallholder farmer in Kano State, had a bumper harvest last dry season but couldn\'t afford the irrigation equipment he needed to expand. Through SwapNaija, he found an agro-dealer willing to exchange two submersible pumps and 400 metres of irrigation pipe for 200 bags of Grade A maize. "I was sceptical at first," Musa says. "But the escrow system gave me confidence that I wouldn\'t lose my maize without getting the equipment." The deal closed in five days. This planting season, Musa\'s irrigated acreage grew from 2 to 6 hectares — and his income tripled.',
+    author: 'Fatima Bello',
+    authorRole: 'Agriculture Correspondent',
+    date: 'May 17, 2026',
+    readTime: '4 min read',
+    tags: ['Kano', 'Farming', 'Irrigation'],
+  },
+  {
+    id: 2,
+    category: 'success',
+    categoryLabel: 'Success Story',
+    emoji: '💻',
+    gradient: 'from-primary to-primary-600',
+    featured: false,
+    title: 'How Emeka Swapped a Broken Laptop for an iPhone 14 Pro in Just 4 Days',
+    excerpt: 'Emeka Okonkwo, a 27-year-old graphic designer in Lagos, listed his damaged MacBook Pro with a detailed breakdown of what was wrong and what he wanted in exchange. Within hours, a tech-repair trader in Ikeja proposed a swap: he\'d fix and keep the MacBook, and Emeka would get a brand-new iPhone 14 Pro. "I thought the value gap would kill it," Emeka recalls, "but we bridged it with a 15,000 BC top-up through the platform." Four days from listing to delivery.',
+    author: 'Chukwuemeka Obi',
+    authorRole: 'Community Reporter',
+    date: 'May 15, 2026',
+    readTime: '3 min read',
+    tags: ['Lagos', 'Tech', 'Success'],
+  },
+  {
+    id: 3,
+    category: 'agric',
+    categoryLabel: 'Agriculture',
+    emoji: '🥬',
+    gradient: 'from-lime-600 to-green-500',
+    featured: false,
+    title: 'Plateau Vegetable Farmers Exchange Fresh Produce for Veterinary Services',
+    excerpt: 'A cooperative of 12 vegetable farmers on the Jos Plateau found a creative solution to their livestock healthcare costs. By pooling weekly harvests of cabbage, spinach, and carrots, they struck a recurring swap deal with a Jos-based vet clinic — fresh vegetables every Friday in exchange for monthly farm visits and medication. The arrangement has saved each farmer an estimated ₦45,000 per quarter.',
+    author: 'Ngozi Plateau',
+    authorRole: 'Rural Trade Writer',
+    date: 'May 13, 2026',
+    readTime: '3 min read',
+    tags: ['Plateau', 'Livestock', 'Cooperative'],
+  },
+  {
+    id: 4,
+    category: 'success',
+    categoryLabel: 'Success Story',
+    emoji: '📸',
+    gradient: 'from-purple-600 to-violet-500',
+    featured: false,
+    title: 'Photography Student Trades Skills for 6 Months of Groceries',
+    excerpt: 'When final-year student Amara Eze ran out of funds for food mid-semester, she listed her photography services on SwapNaija. A supermarket owner in Enugu needed professional product photos for a rebrand and offered six months of weekly grocery hampers in return. "It kept me fed through exams," Amara says. She has since built a portfolio from twelve similar barter deals — all documented on SwapNaija.',
+    author: 'Tunde Adeyemi',
+    authorRole: 'Youth & Innovation',
+    date: 'May 11, 2026',
+    readTime: '2 min read',
+    tags: ['Enugu', 'Services', 'Student'],
+  },
+  {
+    id: 5,
+    category: 'agric',
+    categoryLabel: 'Agriculture',
+    emoji: '🌾',
+    gradient: 'from-yellow-600 to-amber-500',
+    featured: false,
+    title: 'Rice Farmers in Kebbi State Trade Surplus Harvest for Solar-Powered Milling Equipment',
+    excerpt: 'Post-harvest losses cost Nigerian rice farmers billions annually. A group of farmers in Kebbi found a sustainable fix: exchanging 500 bags of paddy rice for a solar-powered mini rice mill valued at ₦2.4 million. The SwapNaija deal, brokered over two weeks, now allows the cooperative to mill locally and sell finished rice at premium prices — retaining an extra ₦800,000 per tonne.',
+    author: 'Ibrahim Kebbi',
+    authorRole: 'AgriTech Reporter',
+    date: 'May 9, 2026',
+    readTime: '4 min read',
+    tags: ['Kebbi', 'Rice', 'Solar'],
+  },
+  {
+    id: 6,
+    category: 'tips',
+    categoryLabel: 'Tips',
+    emoji: '⚡',
+    gradient: 'from-accent to-orange-500',
+    featured: false,
+    title: '7 Items That Swap Fastest on SwapNaija Right Now',
+    excerpt: 'Data from over 58,000 completed swaps reveals a clear pattern: smartphones, laptops, generators, sewing machines, musical instruments, agric inputs, and professional services consistently close in under 48 hours. We break down why these categories move so fast — and how to write listings that get proposals within the first hour.',
+    author: 'SwapNaija Editorial',
+    authorRole: 'Platform Insights',
+    date: 'May 8, 2026',
+    readTime: '5 min read',
+    tags: ['Tips', 'Strategy', 'Trending'],
+  },
+  {
+    id: 7,
+    category: 'market',
+    categoryLabel: 'Market',
+    emoji: '📈',
+    gradient: 'from-blue-600 to-cyan-500',
+    featured: false,
+    title: 'SwapNaija Crosses 58,000 Completed Swaps — What This Means for Nigerian Trade',
+    excerpt: 'Nigeria\'s largest barter platform has hit a milestone: 58,000 confirmed swaps since launch. The data tells a fascinating story — agricultural goods are the fastest-growing category (up 210% year-on-year), services now account for 28% of all swaps, and the average swap value has risen to ₦85,000. Here\'s what the numbers reveal about how Nigerians are embracing trade without cash.',
+    author: 'SwapNaija Editorial',
+    authorRole: 'Platform Insights',
+    date: 'May 6, 2026',
+    readTime: '6 min read',
+    tags: ['Milestone', 'Data', 'Growth'],
+  },
+  {
+    id: 8,
+    category: 'success',
+    categoryLabel: 'Success Story',
+    emoji: '🪡',
+    gradient: 'from-pink-600 to-rose-500',
+    featured: false,
+    title: 'Port Harcourt Tailor Builds Dream Studio Through 12 Consecutive Swaps',
+    excerpt: 'Starting with a single vintage sewing machine, Blessing Amadi spent eight months on a barter chain — machine for fabric, fabric for thread and notions, notions for a mannequin, and so on. Twelve swaps later, her studio is fully equipped. "I didn\'t spend a single naira on equipment," she says. "Every swap built on the last one."',
+    author: 'Ada Rivers',
+    authorRole: 'SME & Craft',
+    date: 'May 4, 2026',
+    readTime: '3 min read',
+    tags: ['PH', 'Fashion', 'SME'],
+  },
+  {
+    id: 9,
+    category: 'tips',
+    categoryLabel: 'Tips',
+    emoji: '🔒',
+    gradient: 'from-teal-600 to-primary',
+    featured: false,
+    title: 'Why Escrow Turns a Risky Swap into a Safe One — A Complete Guide',
+    excerpt: 'Many new SwapNaija members skip escrow on small deals. Our claims data shows that 94% of disputes involve swaps where no escrow was used. We walk through exactly how the escrow system works, what the 2% fee covers, and why even a ₦10,000 swap is safer with it active.',
+    author: 'SwapNaija Editorial',
+    authorRole: 'Safety & Trust',
+    date: 'May 2, 2026',
+    readTime: '4 min read',
+    tags: ['Safety', 'Escrow', 'Guide'],
+  },
+  {
+    id: 10,
+    category: 'market',
+    categoryLabel: 'Market',
+    emoji: '🌍',
+    gradient: 'from-indigo-600 to-blue-500',
+    featured: false,
+    title: 'The Rise of Barter Culture Among Nigeria\'s Gen Z — and Why It\'s Here to Stay',
+    excerpt: 'Economic pressure and a distrust of traditional commerce have pushed Nigeria\'s Gen Z toward creative alternatives. SwapNaija\'s fastest-growing demographic — users aged 18–24 — now accounts for 41% of all new listings. We speak to five young traders about why bartering fits their values, their wallets, and their vision for a cashless-optional economy.',
+    author: 'Chisom Okafor',
+    authorRole: 'Culture & Society',
+    date: 'Apr 30, 2026',
+    readTime: '5 min read',
+    tags: ['Gen Z', 'Culture', 'Economy'],
+  },
+];
+
 // ─── Sub-components ────────────────────────────────────────────────────────────
 function StatCard({ icon: Icon, label, value, color, bg }) {
   return (
@@ -184,8 +346,98 @@ function TrendingListingCard({ listing }) {
   );
 }
 
+const CAT_COLORS = {
+  agric:   { badge: 'bg-green-100 text-green-700',   dot: 'bg-green-500'   },
+  success: { badge: 'bg-primary/10 text-primary',    dot: 'bg-primary'     },
+  tips:    { badge: 'bg-amber-100 text-amber-700',   dot: 'bg-accent'      },
+  market:  { badge: 'bg-blue-100 text-blue-700',     dot: 'bg-blue-500'    },
+};
+
+function FeaturedArticleCard({ article }) {
+  const colors = CAT_COLORS[article.category] || CAT_COLORS.market;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className="bg-white rounded-3xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow cursor-pointer"
+    >
+      {/* Visual header */}
+      <div className={`bg-gradient-to-br ${article.gradient} px-8 py-10 relative overflow-hidden`}>
+        <div className="absolute -top-8 -right-8 w-40 h-40 bg-white/10 rounded-full" />
+        <div className="absolute bottom-0 left-12 w-24 h-24 bg-white/5 rounded-full" />
+        <span className="text-6xl relative z-10 block mb-4">{article.emoji}</span>
+        <span className="relative z-10 inline-flex items-center gap-1.5 bg-white/20 text-white text-xs font-bold px-3 py-1 rounded-full">
+          <span className="w-1.5 h-1.5 bg-white rounded-full" />
+          {article.categoryLabel}
+        </span>
+      </div>
+      {/* Content */}
+      <div className="p-6">
+        <h3 className="font-display font-bold text-xl text-ink leading-snug mb-3">{article.title}</h3>
+        <p className="text-sm text-gray-500 leading-relaxed line-clamp-4 mb-4">{article.excerpt}</p>
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {article.tags.map(t => (
+            <span key={t} className="text-[11px] bg-gray-100 text-gray-500 px-2.5 py-0.5 rounded-full">{t}</span>
+          ))}
+        </div>
+        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+          <div className="flex items-center gap-2">
+            <Avatar name={article.author} size="sm" />
+            <div>
+              <p className="text-xs font-semibold text-ink">{article.author}</p>
+              <p className="text-[11px] text-gray-400">{article.authorRole}</p>
+            </div>
+          </div>
+          <div className="text-right">
+            <p className="text-xs text-gray-400">{article.date}</p>
+            <p className="text-[11px] text-primary font-semibold">{article.readTime}</p>
+          </div>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+function ArticleCard({ article, index }) {
+  const colors = CAT_COLORS[article.category] || CAT_COLORS.market;
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ delay: index * 0.05, duration: 0.3 }}
+      className="bg-white rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-shadow cursor-pointer flex flex-col"
+    >
+      {/* Mini header */}
+      <div className={`bg-gradient-to-br ${article.gradient} px-5 py-6 relative overflow-hidden flex-none`}>
+        <div className="absolute -top-4 -right-4 w-20 h-20 bg-white/10 rounded-full" />
+        <span className="text-4xl relative z-10 block">{article.emoji}</span>
+      </div>
+      {/* Content */}
+      <div className="p-4 flex flex-col flex-1">
+        <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full mb-2 w-fit ${colors.badge}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${colors.dot}`} />
+          {article.categoryLabel}
+        </span>
+        <h3 className="font-bold text-sm text-ink leading-snug line-clamp-3 mb-2 flex-1">{article.title}</h3>
+        <p className="text-xs text-gray-500 leading-relaxed line-clamp-2 mb-3">{article.excerpt}</p>
+        <div className="flex items-center justify-between mt-auto pt-3 border-t border-gray-50">
+          <div className="flex items-center gap-1.5">
+            <Avatar name={article.author} size="xs" />
+            <span className="text-[11px] text-gray-500 font-medium truncate max-w-[90px]">{article.author}</span>
+          </div>
+          <span className="text-[10px] text-primary font-semibold flex-none">{article.readTime}</span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Community() {
+  const [activeCategory, setActiveCategory] = useState('all');
+
   const { data: trendingData } = useQuery({
     queryKey: ['community-trending'],
     queryFn: () => searchListings({ sort: 'popular', limit: 6 }),
@@ -193,6 +445,11 @@ export default function Community() {
   });
 
   const trending = trendingData?.listings ?? [];
+
+  const featuredArticle = ARTICLES.find(a => a.featured);
+  const filteredArticles = ARTICLES.filter(a =>
+    !a.featured && (activeCategory === 'all' || a.category === activeCategory)
+  );
 
   return (
     <div className="bg-bg min-h-screen pb-16">
@@ -510,6 +767,71 @@ export default function Community() {
 
           </div>
         </div>
+
+        {/* ─── News & Stories ───────────────────────────────────────────── */}
+        <section className="mt-10">
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-5">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-ink rounded-xl flex items-center justify-center">
+                <Newspaper size={16} className="text-white" />
+              </div>
+              <div>
+                <h2 className="font-display font-bold text-xl text-ink">News & Stories</h2>
+                <p className="text-xs text-gray-400">Real swaps, real people, real impact</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Category filter tabs */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2 mb-6">
+            {ARTICLE_CATS.map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveCategory(id)}
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold whitespace-nowrap transition-all flex-none border ${
+                  activeCategory === id
+                    ? 'bg-ink text-white border-ink'
+                    : 'bg-white text-gray-500 border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <Icon size={12} />
+                {label}
+              </button>
+            ))}
+          </div>
+
+          {/* Featured article — only show on "all" tab */}
+          {activeCategory === 'all' && featuredArticle && (
+            <div className="mb-6">
+              <FeaturedArticleCard article={featuredArticle} />
+            </div>
+          )}
+
+          {/* Article grid */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeCategory}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {filteredArticles.map((article, i) => (
+                <ArticleCard key={article.id} article={article} index={i} />
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Load more hint */}
+          <div className="flex justify-center mt-8">
+            <button className="flex items-center gap-2 text-sm font-semibold text-primary bg-primary/10 hover:bg-primary/15 transition px-6 py-2.5 rounded-full">
+              Load more stories
+              <ArrowRight size={15} />
+            </button>
+          </div>
+        </section>
 
         {/* ─── Trust & Safety Banner ────────────────────────────────────── */}
         <motion.div

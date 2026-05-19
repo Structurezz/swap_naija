@@ -180,7 +180,7 @@ function SafetyAccordion() {
 // ── Desktop sidebar ───────────────────────────────────────────────────────────
 function DesktopSidebar() {
   return (
-    <div className="sticky top-8 space-y-4">
+    <div className="space-y-4">
       {/* Section A — How it works */}
       <div className="rounded-2xl bg-white border border-gray-100 shadow-sm p-5 space-y-4">
         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">How a Swap Proposal Works</p>
@@ -279,39 +279,46 @@ export default function SwapProposalPage() {
   }
 
   return (
-    <div className="bg-[#F2F3F5] min-h-screen">
+    <div className="bg-[#F2F3F5] flex flex-col" style={{ height: '100dvh' }}>
       <TopBar title="Propose Swap" showBack />
 
-      {/* Mobile compact hero */}
-      <div className="lg:hidden">
+      {/* ── Mobile layout ── */}
+      <div className="lg:hidden flex-1 overflow-y-auto">
         <HeroBanner listing={listing} compact />
+        <div className="px-4 py-4">
+          <SwapProposalComp listing={listing} currentUserId={user?.id} />
+        </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 lg:px-8 py-4 lg:py-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="hidden lg:flex items-center gap-2 text-sm text-gray-400 mb-5 hover:text-gray-700 transition-colors"
-        >
-          <ArrowLeft size={15} />
-          <span>Back</span>
-        </button>
+      {/* ── Desktop layout: two fixed-height columns ── */}
+      <div className="hidden lg:flex flex-1 overflow-hidden">
 
-        <div className="hidden lg:block">
-          <HeroBanner listing={listing} compact={false} />
-        </div>
+        {/* Left col — scrollable form */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-10 py-8">
+            <button
+              onClick={() => navigate(-1)}
+              className="flex items-center gap-2 text-sm text-gray-400 mb-5 hover:text-gray-700 transition-colors"
+            >
+              <ArrowLeft size={15} />
+              <span>Back</span>
+            </button>
 
-        <div className="lg:grid lg:grid-cols-[55fr_45fr] lg:gap-8 lg:items-start">
-          {/* Left col — form */}
-          <div>
-            <h1 className="hidden lg:block text-xl font-display font-bold text-gray-900 mb-4">Your Proposal</h1>
+            <HeroBanner listing={listing} compact={false} />
+
+            <h1 className="text-xl font-display font-bold text-gray-900 mb-4">Your Proposal</h1>
             <SwapProposalComp listing={listing} currentUserId={user?.id} />
           </div>
+        </div>
 
-          {/* Right col — sidebar (desktop only) */}
-          <div className="hidden lg:block">
+        {/* Right col — sidebar, never scrolls with the page */}
+        <div className="w-[400px] flex-none border-l border-gray-200 bg-white overflow-y-auto">
+          <div className="px-6 py-8">
+            <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">Swap Guide</p>
             <DesktopSidebar />
           </div>
         </div>
+
       </div>
     </div>
   );

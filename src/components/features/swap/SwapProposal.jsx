@@ -73,10 +73,11 @@ function SwapProposal({ listing, currentUserId }) {
 
   const walletBalance = user?.walletBalance ?? 0; // in kobo
 
-  const { data: myListings } = useQuery({
-    queryKey: ['my-listings'],
-    queryFn:  () => getMyListings('active'),
+  const { data: myListingsData } = useQuery({
+    queryKey: ['my-listings', 1, 'active'],
+    queryFn:  () => getMyListings({ status: 'active', page: 1, limit: 100 }),
   });
+  const myListings = myListingsData?.listings ?? [];
 
   const selectedListingId = watch('initiatorListing');
   const selectedListing   = myListings?.find(l => l.id === selectedListingId);

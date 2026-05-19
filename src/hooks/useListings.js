@@ -24,8 +24,9 @@ export function useListing(id) {
 
 export function useMyListings(status) {
   return useQuery({
-    queryKey: ['my-listings', status],
-    queryFn: () => listingsApi.getMyListings(status),
+    queryKey: ['my-listings', 1, status ?? ''],
+    queryFn: () => listingsApi.getMyListings({ ...(status && { status }), page: 1, limit: 100 }),
+    select: (data) => data?.listings ?? data,
   });
 }
 

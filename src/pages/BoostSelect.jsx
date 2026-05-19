@@ -19,15 +19,14 @@ export default function BoostSelect() {
   const [page, setPage] = useState(1);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['my-listings'],
-    queryFn: () => getMyListings(),
+    queryKey: ['my-listings', page, ''],
+    queryFn: () => getMyListings({ page, limit: PAGE_SIZE }),
+    keepPreviousData: true,
   });
 
-  const allListings  = data?.listings ?? data ?? [];
-  const total        = allListings.length;
-  const totalPages   = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const start        = (page - 1) * PAGE_SIZE;
-  const listings     = allListings.slice(start, start + PAGE_SIZE);
+  const listings   = data?.listings ?? [];
+  const total      = data?.total ?? 0;
+  const totalPages = data?.pages ?? 1;
 
   const goTo = (p) => {
     setPage(p);
@@ -89,7 +88,7 @@ export default function BoostSelect() {
         {/* Content */}
         {isLoading ? (
           <div className="flex justify-center py-16"><Spinner size="lg" /></div>
-        ) : allListings.length === 0 ? (
+        ) : listings.length === 0 ? (
           <div className="bg-white border border-gray-100 rounded-3xl py-16 flex flex-col items-center text-center gap-4">
             <div className="w-16 h-16 bg-amber-50 rounded-3xl flex items-center justify-center">
               <Zap size={28} className="text-amber-500" />

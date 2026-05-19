@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getPublicProfile } from '../api/users.api';
+import { getMyListings } from '../api/listings.api';
 import { initiateVerify } from '../api/payments.api';
 import { getNotifPrefs, updateNotifPrefs, unsubscribeAll } from '../api/notifications.api';
 import { useAuthStore } from '../store/auth.store';
@@ -100,27 +101,96 @@ function SectionProfile({ user }) {
 }
 
 // ─── Section: Listings ────────────────────────────────────────────────────────
-function SectionListings({ listings }) {
+const LISTINGS_PER_PAGE = 12;
+
+function SectionListings() {
+  const [page, setPage] = useState(1);
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['my-listings', page, statusFilter],
+    queryFn: () => getMyListings({ page, limit: LISTINGS_PER_PAGE, ...(statusFilter && { status: statusFilter }) }),
+    keepPreviousData: true,
+  });
+
+  const listings = data?.listings ?? [];
+  const total = data?.total ?? 0;
+  const totalPages = data?.pages ?? 1;
+
+  const STATUS_TABS = [
+    { value: '', label: 'All' },
+    { value: 'active', label: 'Active' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'swapped', label: 'Swapped' },
+  ];
+
   return (
     <div className="space-y-5">
       <div className="flex items-start justify-between">
-        <SectionHeader title="My Listings" desc={`${listings?.length || 0} listing${listings?.length !== 1 ? 's' : ''}`} />
+        <SectionHeader title="My Listings" desc={isLoading ? 'Loading…' : `${total} listing${total !== 1 ? 's' : ''}`} />
         <Link to="/create">
           <Button size="sm"><Plus size={14} /> New Listing</Button>
         </Link>
       </div>
-      {listings?.length > 0 ? (
-        <ListingGrid listings={listings} />
-      ) : (
-        <div className="text-center py-14 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-          <div className="w-14 h-14 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-3">
-            <LayoutGrid size={24} className="text-gray-300" />
-          </div>
-          <p className="font-semibold text-gray-500 mb-1">No listings yet</p>
-          <p className="text-sm text-gray-400 mb-4">List something you want to swap</p>
-          <Link to="/create">
-            <Button size="sm"><Plus size={14} /> Create Listing</Button>
-          </Link>
+
+      {/* Status filter tabs */}
+      <div className="flex gap-1.5 flex-wrap">
+        {STATUS_TABS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => { setStatusFilter(value); setPage(1); }}
+            className={`px-4 py-1.5 rounded-full text-xs font-semibold border transition ${
+              statusFilter === value
+                ? 'bg-primary text-white border-primary'
+                : 'bg-white text-gray-500 border-gray-200 hover:border-primary/30'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      <ListingGrid listings={listings} loading={isLoading} error={isError} emptyMessage="No listings here yet." />
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-2">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="p-2 rounded-xl bg-white border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            <ChevronRight size={15} className="rotate-180" />
+          </button>
+          {Array.from({ length: totalPages }, (_, i) => i + 1)
+            .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+            .reduce((acc, n, idx, arr) => {
+              if (idx > 0 && n - arr[idx - 1] > 1) acc.push('…');
+              acc.push(n);
+              return acc;
+            }, [])
+            .map((n, i) =>
+              n === '…' ? (
+                <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">…</span>
+              ) : (
+                <button
+                  key={n}
+                  onClick={() => setPage(n)}
+                  className={`w-8 h-8 rounded-xl text-xs font-bold transition ${
+                    n === page ? 'bg-primary text-white' : 'text-gray-500 hover:bg-gray-100 border border-gray-200'
+                  }`}
+                >
+                  {n}
+                </button>
+              )
+            )}
+          <button
+            onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+            disabled={page === totalPages}
+            className="p-2 rounded-xl bg-white border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition"
+          >
+            <ChevronRight size={15} />
+          </button>
         </div>
       )}
     </div>
@@ -485,6 +555,46 @@ function SectionReferrals({ user }) {
   );
 }
 
+// ─── Mobile quick listings preview ───────────────────────────────────────────
+function MobileListingsPreview({ onViewAll }) {
+  const { data, isLoading } = useQuery({
+    queryKey: ['my-listings', 1, ''],
+    queryFn: () => getMyListings({ page: 1, limit: 4 }),
+    keepPreviousData: true,
+  });
+  const listings = data?.listings ?? [];
+  const total = data?.total ?? 0;
+
+  return (
+    <div className="mb-4">
+      <div className="flex items-center justify-between mb-2 px-1">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
+        <Link to="/create" className="text-xs text-primary font-medium flex items-center gap-1">
+          <Plus size={12} /> New
+        </Link>
+      </div>
+      {isLoading ? (
+        <div className="flex justify-center py-6"><Spinner /></div>
+      ) : listings.length > 0 ? (
+        <div>
+          <ListingGrid listings={listings} />
+          {total > 4 && (
+            <button onClick={onViewAll}
+              className="w-full mt-2 text-xs text-primary font-medium text-center py-2 bg-primary/5 rounded-xl">
+              View all {total} listings →
+            </button>
+          )}
+        </div>
+      ) : (
+        <Link to="/create" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
+          <span className="text-sm text-gray-500">No listings yet — create your first</span>
+          <ChevronRight size={15} className="text-gray-300" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Profile() {
   const { userId } = useParams();
@@ -652,7 +762,7 @@ export default function Profile() {
   const renderSection = () => {
     switch (activeSection) {
       case 'profile':       return <SectionProfile user={user} />;
-      case 'listings':      return <SectionListings listings={listings} />;
+      case 'listings':      return <SectionListings />;
       case 'security':      return <SectionSecurity />;
       case 'verification':  return <SectionVerification user={user} />;
       case 'notifications': return <SectionNotifications />;
@@ -684,30 +794,7 @@ export default function Profile() {
           </div>
 
           {/* Quick listings preview */}
-          <div className="mb-4">
-            <div className="flex items-center justify-between mb-2 px-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">My Listings</p>
-              <Link to="/create" className="text-xs text-primary font-medium flex items-center gap-1">
-                <Plus size={12} /> New
-              </Link>
-            </div>
-            {listings?.length > 0 ? (
-              <div>
-                <ListingGrid listings={listings.slice(0, 4)} />
-                {listings.length > 4 && (
-                  <button onClick={() => setActiveSection('listings')}
-                    className="w-full mt-2 text-xs text-primary font-medium text-center py-2 bg-primary/5 rounded-xl">
-                    View all {listings.length} listings →
-                  </button>
-                )}
-              </div>
-            ) : (
-              <Link to="/create" className="flex items-center justify-between bg-gray-50 rounded-2xl px-4 py-3 border border-dashed border-gray-200">
-                <span className="text-sm text-gray-500">No listings yet — create your first</span>
-                <ChevronRight size={15} className="text-gray-300" />
-              </Link>
-            )}
-          </div>
+          <MobileListingsPreview onViewAll={() => setActiveSection('listings')} />
 
           {groups.map(group => (
             <div key={group} className="mb-4">

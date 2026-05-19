@@ -3,7 +3,7 @@ import { NavLink, Link } from 'react-router-dom';
 import {
   X, Home, Search, PlusCircle, MessageCircle, User,
   ArrowRightLeft, Wallet, Zap, Star, Sparkles,
-  ShieldCheck, Gift, LogOut,
+  ShieldCheck, Gift, LogOut, Users,
 } from 'lucide-react';
 import { useChatStore } from '../../store/chat.store';
 import { useAuthStore } from '../../store/auth.store';
@@ -26,6 +26,7 @@ const DISCOVER_NAV = [
   { to: '/suggested',      icon: Sparkles,    label: 'Suggested For You' },
   { to: '/verify-account', icon: ShieldCheck, label: 'Verify Account' },
   { to: '/invite',         icon: Gift,        label: 'Invite & Earn' },
+  { to: '/community',      icon: Users,       label: 'Community' },
 ];
 
 function MobileMenuDrawer({ open, onClose }) {

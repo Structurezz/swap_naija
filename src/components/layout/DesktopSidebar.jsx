@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-import { Home, Search, PlusCircle, MessageCircle, User, ArrowRightLeft, Wallet, Zap, Sparkles, Star, ShieldCheck, Gift } from 'lucide-react';
+import { Home, Search, PlusCircle, MessageCircle, User, ArrowRightLeft, Wallet, Zap, Sparkles, Star, ShieldCheck, Gift, Users } from 'lucide-react';
 import { useChatStore } from '../../store/chat.store';
 
 const mainNavItems = [
@@ -17,6 +17,7 @@ const discoverNavItems = [
   { to: '/suggested',      icon: Sparkles,    label: 'Suggested For You' },
   { to: '/verify-account', icon: ShieldCheck, label: 'Verify Account' },
   { to: '/invite',         icon: Gift,        label: 'Invite & Earn' },
+  { to: '/community',      icon: Users,       label: 'Community' },
 ];
 
 function DesktopSidebar() {
@@ -27,7 +28,7 @@ function DesktopSidebar() {
     <aside className="hidden lg:flex flex-col fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-100 z-40">
       {/* Brand */}
       <div className="flex items-center px-6 h-16 border-b border-gray-100">
-        <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-9 w-auto" />
+        <img src="/swapnaija-logo.png" alt="SwapNaija" className="h-12 w-auto" />
       </div>
 
       {/* Nav links */}

@@ -27,6 +27,7 @@ import BoostListing from './pages/BoostListing';
 import BoostSelect from './pages/BoostSelect';
 import EditListing from './pages/EditListing';
 import DisputeRoom from './pages/DisputeRoom';
+import Community from './pages/Community';
 import { useAuthStore } from './store/auth.store';
 import SplashScreen from './components/ui/SplashScreen';
 
@@ -69,6 +70,7 @@ function App() {
               <Route path="/featured" element={<FeaturedListings />} />
               <Route path="/verify-account" element={<VerifyAccount />} />
               <Route path="/invite" element={<InviteEarn />} />
+              <Route path="/community" element={<Community />} />
               <Route path="/boost" element={<BoostSelect />} />
               <Route path="/boost/:id" element={<BoostListing />} />
               <Route path="/listing/:id/edit" element={<EditListing />} />

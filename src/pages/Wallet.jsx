@@ -5,19 +5,16 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { topupWallet, verifyPayment, getPaymentHistory } from '../api/payments.api';
 import { useAuthStore } from '../store/auth.store';
-import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import {
   Eye, EyeOff, Plus, ShieldCheck, Zap, Gift,
   ArrowDownLeft, Wallet as WalletIcon, X,
-  ChevronRight, CheckCircle2, Clock3, XCircle,
-  Bell, Settings,
+  CheckCircle2, Clock3, XCircle, Bell, Settings,
+  ChevronRight, ArrowUpRight, Delete,
 } from 'lucide-react';
 import { formatBC } from '../utils/currency';
-import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
-
-const PRESET_AMOUNTS = [500, 1000, 2000, 5000];
+import { format, isToday, isYesterday } from 'date-fns';
 
 const TYPE_META = {
   topup:        { label: 'Barter Credit Top-up',  icon: ArrowDownLeft, credit: true  },
@@ -48,19 +45,16 @@ function resolvePayment(p) {
 
 function groupByDate(payments) {
   const groups = {};
-  payments.forEach(p => {
+  (payments || []).forEach(p => {
     const d = new Date(p.createdAt);
-    let key;
-    if (isToday(d)) key = 'Today';
-    else if (isYesterday(d)) key = 'Yesterday';
-    else key = format(d, 'dd MMM yyyy');
+    const key = isToday(d) ? 'Today' : isYesterday(d) ? 'Yesterday' : format(d, 'dd MMM yyyy');
     if (!groups[key]) groups[key] = [];
     groups[key].push(p);
   });
   return groups;
 }
 
-// ─── Chip SVG ────────────────────────────────────────────────────────────────
+// ─── Chip SVG ─────────────────────────────────────────────────────────────────
 function Chip() {
   return (
     <svg width="38" height="28" viewBox="0 0 38 28" fill="none">
@@ -68,7 +62,6 @@ function Chip() {
       <rect x="13" y="0.5" width="12" height="27" fill="#C9A227" />
       <rect x="0.5" y="9" width="37" height="10" fill="#C9A227" />
       <rect x="13" y="9" width="12" height="10" fill="#B8962E" />
-      <rect x="0.5" y="0.5" width="37" height="27" rx="3.5" stroke="#B8962E" strokeOpacity="0.4" />
     </svg>
   );
 }
@@ -77,66 +70,58 @@ function Chip() {
 function VirtualCard({ balance, user, hidden, onToggleHide }) {
   const bc = balance / 100;
   const formatted = bc.toLocaleString('en-NG', { minimumFractionDigits: 2 });
-
   return (
     <div
       className="relative rounded-[24px] overflow-hidden text-white select-none"
-      style={{ background: 'linear-gradient(135deg, #0A0F1E 0%, #141B35 40%, #1a2340 100%)', minHeight: 200 }}
+      style={{ background: 'linear-gradient(135deg,#0A0F1E 0%,#141B35 50%,#0d1a2e 100%)', minHeight: 196 }}
     >
-      {/* Decorative rings */}
-      <div className="absolute -top-16 -right-16 w-56 h-56 rounded-full border border-white/5" />
-      <div className="absolute -top-8 -right-8 w-40 h-40 rounded-full border border-white/5" />
-      <div className="absolute -bottom-20 -left-16 w-56 h-56 rounded-full border border-white/5" />
-
-      {/* Glow */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-32 bg-primary/12 blur-3xl rounded-full" />
-
-      <div className="relative p-6">
-        {/* Top row */}
-        <div className="flex items-start justify-between mb-6">
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute -top-16 -right-16 w-52 h-52 rounded-full border border-white/[0.04]" />
+        <div className="absolute -top-6 -right-6 w-32 h-32 rounded-full border border-white/[0.04]" />
+        <div className="absolute -bottom-16 -left-12 w-52 h-52 rounded-full border border-white/[0.04]" />
+        <div className="absolute top-1/2 left-1/3 -translate-y-1/2 w-48 h-24 bg-primary/10 blur-3xl rounded-full" />
+      </div>
+      <div className="relative p-5 lg:p-6 flex flex-col h-full" style={{ minHeight: 196 }}>
+        {/* Top */}
+        <div className="flex items-start justify-between mb-5">
           <div>
-            <p className="text-[10px] font-bold tracking-[0.2em] text-white/40 uppercase mb-1">SwapNaija</p>
-            <p className="text-[10px] text-white/25 tracking-wider">Virtual Wallet</p>
+            <p className="text-[10px] font-bold tracking-[0.18em] text-white/40 uppercase">SwapNaija</p>
+            <p className="text-[10px] text-white/20 tracking-wider mt-0.5">Virtual Wallet</p>
           </div>
           <Chip />
         </div>
-
         {/* Balance */}
-        <div className="mb-6">
-          <p className="text-[11px] font-semibold text-white/40 uppercase tracking-widest mb-2">Available Balance</p>
-          <div className="flex items-center gap-3">
+        <div className="flex-1">
+          <p className="text-[10px] font-semibold text-white/35 uppercase tracking-widest mb-1.5">Available Balance</p>
+          <div className="flex items-center gap-2.5">
             {hidden ? (
-              <div className="flex items-center gap-2">
-                <span className="text-3xl font-display font-bold tracking-tight leading-none">•••••••</span>
-                <span className="text-white/50 font-bold text-lg">BC</span>
-              </div>
+              <span className="font-display font-bold text-3xl tracking-tight leading-none">● ● ● ●</span>
             ) : (
-              <div className="flex items-end gap-2">
-                <span className="font-display font-bold text-3xl lg:text-4xl leading-none tracking-tight">{formatted}</span>
-                <span className="font-bold text-white/50 text-lg mb-0.5">BC</span>
-              </div>
+              <>
+                <span className="font-display font-bold leading-none tracking-tight" style={{ fontSize: 'clamp(1.8rem,6vw,2.8rem)' }}>
+                  {formatted}
+                </span>
+                <span className="font-bold text-white/45 text-lg mb-0.5">BC</span>
+              </>
             )}
-            <button
-              onClick={onToggleHide}
-              className="w-8 h-8 rounded-full bg-white/8 flex items-center justify-center hover:bg-white/15 transition ml-1"
-            >
-              {hidden ? <Eye size={14} className="text-white/60" /> : <EyeOff size={14} className="text-white/60" />}
+            <button onClick={onToggleHide}
+              className="w-7 h-7 rounded-full bg-white/8 flex items-center justify-center hover:bg-white/15 transition flex-none">
+              {hidden ? <Eye size={13} className="text-white/50" /> : <EyeOff size={13} className="text-white/50" />}
             </button>
           </div>
-          <p className="text-[11px] text-white/25 mt-1.5">1 BC = ₦1 · Barter Credits</p>
+          <p className="text-[10px] text-white/20 mt-1">1 BC = ₦1</p>
         </div>
-
-        {/* Bottom row */}
-        <div className="flex items-end justify-between">
+        {/* Bottom */}
+        <div className="flex items-end justify-between mt-4">
           <div>
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Card Holder</p>
-            <p className="font-semibold text-sm text-white/80 truncate max-w-[160px]">{user?.fullName || 'SwapNaija User'}</p>
+            <p className="text-[10px] text-white/25 uppercase tracking-widest mb-0.5">Holder</p>
+            <p className="font-semibold text-sm text-white/75 truncate max-w-[140px]">{user?.fullName || 'SwapNaija User'}</p>
           </div>
           <div className="text-right">
-            <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Status</p>
+            <p className="text-[10px] text-white/25 uppercase tracking-widest mb-0.5">Status</p>
             <div className="flex items-center gap-1.5 justify-end">
               <span className={`w-1.5 h-1.5 rounded-full ${user?.verification === 'verified' ? 'bg-emerald-400' : 'bg-yellow-400'}`} />
-              <span className="text-sm font-semibold text-white/80 capitalize">{user?.verification || 'Unverified'}</span>
+              <span className="text-sm font-semibold text-white/75 capitalize">{user?.verification || 'Unverified'}</span>
             </div>
           </div>
         </div>
@@ -147,158 +132,163 @@ function VirtualCard({ balance, user, hidden, onToggleHide }) {
 
 // ─── Quick Actions ────────────────────────────────────────────────────────────
 function QuickActions({ onAdd }) {
-  const items = [
-    { label: 'Add Money', icon: Plus,        action: onAdd,            bg: 'bg-primary',   iconColor: 'text-white', textColor: 'text-primary' },
-    { label: 'Verify',    icon: ShieldCheck, to: '/verify-account',    bg: 'bg-blue-50',   iconColor: 'text-blue-600',   textColor: 'text-blue-600'   },
-    { label: 'Boost',     icon: Zap,         to: '/boost',             bg: 'bg-amber-50',  iconColor: 'text-amber-600',  textColor: 'text-amber-600'  },
-    { label: 'Invite',    icon: Gift,        to: '/invite',            bg: 'bg-violet-50', iconColor: 'text-violet-600', textColor: 'text-violet-600' },
+  const actions = [
+    { label: 'Add Money',   icon: Plus,        onClick: onAdd,         primary: true },
+    { label: 'Verify',      icon: ShieldCheck, to: '/verify-account'               },
+    { label: 'Boost',       icon: Zap,         to: '/boost'                        },
+    { label: 'Invite',      icon: Gift,        to: '/invite'                       },
   ];
-
   return (
     <div className="grid grid-cols-4 gap-3">
-      {items.map(({ label, icon: Icon, action, to, bg, iconColor, textColor }) => {
-        const inner = (
+      {actions.map(({ label, icon: Icon, onClick, to, primary }) => {
+        const wrap = `flex flex-col items-center gap-2`;
+        const btn = (
           <>
-            <div className={`w-12 h-12 ${bg} rounded-2xl flex items-center justify-center mb-2 ${label === 'Add Money' ? 'shadow-lg shadow-primary/30' : ''}`}>
-              <Icon size={20} className={iconColor} />
+            <div className={`w-13 h-13 rounded-2xl flex items-center justify-center ${
+              primary ? 'bg-primary shadow-lg shadow-primary/25' : 'bg-white border border-gray-100 shadow-sm'
+            }`} style={{ width: 52, height: 52 }}>
+              <Icon size={20} className={primary ? 'text-white' : 'text-gray-600'} />
             </div>
-            <span className={`text-xs font-semibold ${label === 'Add Money' ? textColor : 'text-gray-600'}`}>{label}</span>
+            <span className="text-xs font-semibold text-gray-600">{label}</span>
           </>
         );
-        return to ? (
-          <Link key={label} to={to} className="flex flex-col items-center">{inner}</Link>
-        ) : (
-          <button key={label} onClick={action} className="flex flex-col items-center">{inner}</button>
-        );
+        return to
+          ? <Link key={label} to={to} className={wrap}>{btn}</Link>
+          : <button key={label} onClick={onClick} className={wrap}>{btn}</button>;
       })}
     </div>
   );
 }
 
-// ─── Account Info Strip ───────────────────────────────────────────────────────
-function AccountStrip({ user }) {
+// ─── Stat Strip ──────────────────────────────────────────────────────────────
+function StatStrip({ user }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4 flex items-center justify-between">
-      <div className="flex items-center gap-4 divide-x divide-gray-100">
-        {[
-          { label: 'Total Swaps', value: user?.swapCount || 0 },
-          { label: 'Rating',      value: user?.ratingAvg ? `${user.ratingAvg.toFixed(1)} ★` : '—' },
-          { label: 'Listings',    value: user?.listingCount || 0 },
-        ].map(({ label, value }) => (
-          <div key={label} className="pr-4 last:pr-0 first:pl-0 pl-4">
-            <p className="font-bold text-base text-gray-900">{value}</p>
-            <p className="text-[11px] text-gray-400">{label}</p>
-          </div>
-        ))}
-      </div>
-      <div className="text-right">
-        <p className="text-[11px] text-gray-400 mb-0.5">Swap Credits</p>
-        <p className="font-bold text-sm text-primary">{(user?.swapCredits || 0).toLocaleString()} BC</p>
-      </div>
+    <div className="bg-white rounded-2xl border border-gray-100 shadow-sm grid grid-cols-4 divide-x divide-gray-100">
+      {[
+        { label: 'Swaps',    value: user?.swapCount || 0 },
+        { label: 'Rating',   value: user?.ratingAvg ? `${user.ratingAvg.toFixed(1)}★` : '—' },
+        { label: 'Listings', value: user?.listingCount || 0 },
+        { label: 'Credits',  value: `${(user?.swapCredits || 0).toLocaleString()}` },
+      ].map(({ label, value }) => (
+        <div key={label} className="py-4 text-center">
+          <p className="font-bold text-[15px] text-gray-900">{value}</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">{label}</p>
+        </div>
+      ))}
     </div>
   );
 }
 
-// ─── Add Money Bottom Sheet ───────────────────────────────────────────────────
-function AddMoneySheet({ open, onClose, finalAmount, selectedAmount, customAmount, setSelectedAmount, setCustomAmount, onTopUp, loading }) {
+// ─── Numpad Add Money Modal ───────────────────────────────────────────────────
+const QUICK_AMOUNTS = [500, 1000, 2000, 5000, 10000, 20000];
+
+function AddMoneyModal({ open, onClose, onTopUp, loading }) {
+  const [raw, setRaw] = useState('');
+  const amount = parseInt(raw) || 0;
+
+  const press = (key) => {
+    if (key === 'del') { setRaw(r => r.slice(0, -1)); return; }
+    if (key === '00') { setRaw(r => (r ? r + '00' : r)); return; }
+    if (raw.length >= 7) return;
+    setRaw(r => r + key);
+  };
+
+  const handleQuick = (amt) => setRaw(String(amt));
+
+  const display = amount > 0
+    ? amount.toLocaleString('en-NG')
+    : '0';
+
   return (
     <AnimatePresence>
       {open && (
         <>
+          {/* Backdrop */}
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" onClick={onClose} />
+            className="fixed inset-0 bg-black/60 z-40 backdrop-blur-sm" onClick={onClose} />
+
+          {/* Modal */}
           <motion.div
             initial={{ y: '100%' }} animate={{ y: 0 }} exit={{ y: '100%' }}
-            transition={{ type: 'spring', stiffness: 360, damping: 34 }}
-            className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-[28px] shadow-2xl max-h-[90vh] overflow-y-auto"
+            transition={{ type: 'spring', stiffness: 380, damping: 36 }}
+            className="fixed bottom-0 left-0 right-0 z-50 lg:inset-0 lg:flex lg:items-center lg:justify-center lg:p-4"
           >
-            <div className="flex justify-center pt-3 pb-1">
-              <div className="w-10 h-1 bg-gray-200 rounded-full" />
-            </div>
+            <div className="bg-white w-full lg:max-w-sm lg:rounded-[28px] rounded-t-[28px] shadow-2xl overflow-hidden">
+              {/* Handle (mobile only) */}
+              <div className="flex justify-center pt-3 pb-1 lg:hidden">
+                <div className="w-10 h-1 bg-gray-200 rounded-full" />
+              </div>
 
-            <div className="px-5 pt-4 pb-10 space-y-6">
               {/* Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-display font-bold text-xl text-gray-900">Add Money</h2>
-                  <p className="text-xs text-gray-400 mt-0.5">Choose amount · Pay securely via Paystack</p>
-                </div>
+              <div className="flex items-center justify-between px-6 pt-4 pb-2">
+                <h2 className="font-display font-bold text-lg text-gray-900">Add Money</h2>
                 <button onClick={onClose}
-                  className="w-9 h-9 rounded-full bg-gray-100 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition">
-                  <X size={17} />
+                  className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 transition flex items-center justify-center text-gray-500">
+                  <X size={16} />
                 </button>
               </div>
 
-              {/* Amount presets */}
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Select Amount</p>
-                <div className="grid grid-cols-4 gap-2.5">
-                  {PRESET_AMOUNTS.map(amt => {
-                    const active = selectedAmount === amt && !customAmount;
-                    return (
-                      <button key={amt}
-                        onClick={() => { setSelectedAmount(amt); setCustomAmount(''); }}
-                        className={`py-4 rounded-2xl text-center transition-all border-2 ${
-                          active ? 'border-primary bg-primary text-white' : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-primary/40'
-                        }`}
-                      >
-                        <span className="block font-bold text-base leading-none">
-                          {amt >= 1000 ? `${amt / 1000}k` : amt}
-                        </span>
-                        <span className={`block text-[10px] mt-1 ${active ? 'text-white/70' : 'text-gray-400'}`}>BC</span>
-                      </button>
-                    );
-                  })}
+              {/* Amount display */}
+              <div className="px-6 pt-4 pb-5 text-center border-b border-gray-100">
+                <p className="text-[11px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Enter Amount (BC)</p>
+                <div className="flex items-end justify-center gap-2 min-h-[56px]">
+                  <span className="font-bold text-gray-400 text-xl mb-1">BC</span>
+                  <AnimatePresence mode="popLayout">
+                    <motion.span
+                      key={display}
+                      initial={{ y: -8, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      exit={{ y: 8, opacity: 0 }}
+                      transition={{ duration: 0.12 }}
+                      className={`font-display font-bold leading-none ${amount > 0 ? 'text-gray-900' : 'text-gray-300'}`}
+                      style={{ fontSize: amount > 9999 ? '2.2rem' : '2.8rem' }}
+                    >
+                      {display}
+                    </motion.span>
+                  </AnimatePresence>
+                </div>
+                {amount > 0 && (
+                  <p className="text-xs text-gray-400 mt-1">= ₦{amount.toLocaleString()} via Paystack</p>
+                )}
+                {amount > 0 && amount < 100 && (
+                  <p className="text-xs text-red-400 mt-1">Minimum is 100 BC</p>
+                )}
+              </div>
+
+              {/* Quick amounts */}
+              <div className="px-5 pt-4 pb-2 flex gap-2 flex-wrap justify-center">
+                {QUICK_AMOUNTS.map(a => (
+                  <button key={a} onClick={() => handleQuick(a)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition ${
+                      amount === a ? 'bg-primary text-white border-primary' : 'bg-gray-100 text-gray-600 border-transparent hover:border-primary/30'
+                    }`}>
+                    {a >= 1000 ? `${a / 1000}k` : a} BC
+                  </button>
+                ))}
+              </div>
+
+              {/* Numpad */}
+              <div className="px-5 py-3">
+                <div className="grid grid-cols-3 gap-1">
+                  {['1','2','3','4','5','6','7','8','9','00','0','del'].map(k => (
+                    <button key={k} onClick={() => press(k)}
+                      className={`h-14 rounded-2xl font-bold text-lg flex items-center justify-center transition-all active:scale-95 ${
+                        k === 'del'
+                          ? 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                          : 'bg-gray-50 text-gray-900 hover:bg-gray-100'
+                      }`}>
+                      {k === 'del' ? <Delete size={18} /> : k}
+                    </button>
+                  ))}
                 </div>
               </div>
 
-              {/* Custom */}
-              <div>
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Or Enter Custom</p>
-                <div className="flex items-center gap-3 border-2 border-gray-200 rounded-2xl px-4 py-3.5 focus-within:border-primary transition bg-gray-50">
-                  <span className="font-bold text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-lg">BC</span>
-                  <input
-                    type="number" min="100"
-                    placeholder="Enter amount (min. 100)"
-                    value={customAmount}
-                    onChange={e => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
-                    className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder-gray-400"
-                  />
-                </div>
-              </div>
-
-              {/* Summary */}
-              {finalAmount >= 100 && (
-                <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                  className="bg-gray-50 rounded-2xl px-4 py-4 border border-gray-100">
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-500">Amount (BC)</span>
-                    <span className="font-semibold text-gray-900">{finalAmount.toLocaleString()} BC</span>
-                  </div>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="text-gray-500">You pay (₦)</span>
-                    <span className="font-semibold text-gray-900">₦{finalAmount.toLocaleString()}</span>
-                  </div>
-                  <div className="border-t border-gray-200 my-2" />
-                  <div className="flex justify-between text-sm">
-                    <span className="font-semibold text-gray-700">You receive</span>
-                    <span className="font-bold text-primary">{finalAmount.toLocaleString()} BC</span>
-                  </div>
-                </motion.div>
-              )}
-
-              {/* Pay button */}
-              <Button fullWidth size="lg" loading={loading} disabled={finalAmount < 100} onClick={onTopUp}>
-                Proceed to Pay · ₦{finalAmount > 0 ? finalAmount.toLocaleString() : '—'}
-              </Button>
-
-              {/* Trust */}
-              <div className="flex items-center justify-center gap-4 text-[11px] text-gray-300">
-                <span>🔒 SSL Encrypted</span>
-                <span>·</span>
-                <span>Paystack Secured</span>
-                <span>·</span>
-                <span>Instant Credit</span>
+              {/* CTA */}
+              <div className="px-5 pb-8 pt-2 space-y-3">
+                <Button fullWidth size="lg" loading={loading} disabled={amount < 100} onClick={() => onTopUp(amount)}>
+                  Pay ₦{amount > 0 ? amount.toLocaleString() : '—'}
+                </Button>
+                <p className="text-center text-[11px] text-gray-300">🔒 Paystack · SSL Encrypted · Instant</p>
               </div>
             </div>
           </motion.div>
@@ -322,7 +312,6 @@ function TxList({ isLoading, payments }) {
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
-      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
         <div>
           <h3 className="font-display font-bold text-base text-gray-900">Transactions</h3>
@@ -332,7 +321,7 @@ function TxList({ isLoading, payments }) {
           {['All', 'Credits', 'Debits'].map(f => (
             <button key={f} onClick={() => setFilter(f)}
               className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
-                filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'
+                filter === f ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-600'
               }`}>
               {f}
             </button>
@@ -340,11 +329,10 @@ function TxList({ isLoading, payments }) {
         </div>
       </div>
 
-      {/* Body */}
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : !filtered.length ? (
-        <div className="flex flex-col items-center py-16 text-center px-6">
+        <div className="flex flex-col items-center py-16 text-center">
           <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center mb-3">
             <WalletIcon size={22} className="text-gray-300" />
           </div>
@@ -357,41 +345,33 @@ function TxList({ isLoading, payments }) {
         <div>
           {Object.entries(groups).map(([date, items]) => (
             <div key={date}>
-              {/* Date header */}
               <div className="px-5 py-2.5 bg-gray-50/80">
                 <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{date}</span>
               </div>
-              {/* Items */}
               {items.map((p, i) => {
                 const { isCredit, meta, label } = resolvePayment(p);
                 const Icon = meta.icon;
                 return (
-                  <motion.div
-                    key={p.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.025 }}
+                  <motion.div key={p.id}
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                    transition={{ delay: i * 0.02 }}
                     className="flex items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
                   >
-                    {/* Icon bubble */}
                     <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none ${isCredit ? 'bg-emerald-50' : 'bg-gray-100'}`}>
                       <Icon size={18} className={isCredit ? 'text-emerald-600' : 'text-gray-500'} />
                     </div>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">{label}
+                      <p className="font-semibold text-sm text-gray-900 truncate">
+                        {label}
                         {p.listingId?.title && <span className="font-normal text-gray-400"> · {p.listingId.title}</span>}
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         {p.status === 'success' && <CheckCircle2 size={11} className="text-emerald-500 flex-none" />}
                         {p.status === 'pending' && <Clock3 size={11} className="text-amber-500 flex-none" />}
-                        {p.status === 'failed'  && <XCircle  size={11} className="text-red-500 flex-none" />}
-                        <p className="text-[11px] text-gray-400">
-                          {format(new Date(p.createdAt), 'h:mm a')}
-                        </p>
+                        {p.status === 'failed'  && <XCircle  size={11} className="text-red-400 flex-none" />}
+                        <p className="text-[11px] text-gray-400">{format(new Date(p.createdAt), 'h:mm a')}</p>
                       </div>
                     </div>
-                    {/* Amount */}
                     <div className="text-right flex-none">
                       <p className={`font-bold text-sm ${isCredit ? 'text-emerald-600' : 'text-gray-900'}`}>
                         {isCredit ? '+' : '−'}{formatBC(p.amountKobo)}
@@ -399,7 +379,7 @@ function TxList({ isLoading, payments }) {
                       <p className={`text-[10px] font-medium capitalize mt-0.5 ${
                         p.status === 'success' ? 'text-emerald-500'
                         : p.status === 'pending' ? 'text-amber-500'
-                        : 'text-red-500'
+                        : 'text-red-400'
                       }`}>{p.status}</p>
                     </div>
                   </motion.div>
@@ -413,96 +393,13 @@ function TxList({ isLoading, payments }) {
   );
 }
 
-// ─── Desktop Top-up Panel ─────────────────────────────────────────────────────
-function DesktopTopUp({ finalAmount, selectedAmount, customAmount, setSelectedAmount, setCustomAmount, onTopUp, loading }) {
-  return (
-    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
-      <div className="px-6 pt-5 pb-4 border-b border-gray-50">
-        <h3 className="font-display font-bold text-base text-gray-900">Add Money</h3>
-        <p className="text-xs text-gray-400 mt-0.5">Top up via Paystack · 1 BC = ₦1</p>
-      </div>
-      <div className="p-6 space-y-5">
-        {/* Presets */}
-        <div className="grid grid-cols-2 gap-2.5">
-          {PRESET_AMOUNTS.map(amt => {
-            const active = selectedAmount === amt && !customAmount;
-            return (
-              <motion.button key={amt} whileTap={{ scale: 0.97 }}
-                onClick={() => { setSelectedAmount(amt); setCustomAmount(''); }}
-                className={`py-4 rounded-2xl text-center transition border-2 ${
-                  active ? 'border-primary bg-primary text-white' : 'border-gray-200 bg-gray-50 hover:border-primary/40 text-gray-700'
-                }`}>
-                <span className="block font-bold text-xl">{amt.toLocaleString()}</span>
-                <span className={`block text-[11px] mt-0.5 ${active ? 'text-white/70' : 'text-gray-400'}`}>Barter Credits</span>
-              </motion.button>
-            );
-          })}
-        </div>
-
-        {/* Custom */}
-        <div className="flex items-center gap-3 border-2 border-gray-200 rounded-2xl px-4 py-3 focus-within:border-primary transition bg-gray-50">
-          <span className="font-bold text-xs text-gray-400 bg-gray-200 px-2 py-0.5 rounded-lg flex-none">BC</span>
-          <input
-            type="number" min="100" placeholder="Custom amount"
-            value={customAmount}
-            onChange={e => { setCustomAmount(e.target.value); setSelectedAmount(0); }}
-            className="flex-1 bg-transparent text-sm font-semibold text-gray-900 focus:outline-none placeholder-gray-400"
-          />
-        </div>
-
-        {/* Summary box */}
-        {finalAmount >= 100 && (
-          <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-            className="bg-gray-50 rounded-2xl px-4 py-3 border border-gray-100 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-gray-500">Amount</span><span className="font-semibold">{finalAmount.toLocaleString()} BC</span></div>
-            <div className="flex justify-between"><span className="text-gray-500">You pay</span><span className="font-semibold">₦{finalAmount.toLocaleString()}</span></div>
-            <div className="border-t border-gray-200 pt-2 flex justify-between">
-              <span className="font-semibold text-gray-700">Credited</span>
-              <span className="font-bold text-primary">{finalAmount.toLocaleString()} BC</span>
-            </div>
-          </motion.div>
-        )}
-
-        <Button fullWidth size="lg" loading={loading} disabled={finalAmount < 100} onClick={onTopUp}>
-          Proceed · ₦{finalAmount > 0 ? finalAmount.toLocaleString() : '—'}
-        </Button>
-
-        <p className="text-center text-[11px] text-gray-300">🔒 Paystack Secured · Instant · No Fees</p>
-      </div>
-
-      {/* Quick links */}
-      <div className="border-t border-gray-50">
-        {[
-          { to: '/verify-account', icon: ShieldCheck, label: 'Verify Account',  sub: '1,000 BC', bg: 'bg-blue-50',   ic: 'text-blue-600'   },
-          { to: '/boost',          icon: Zap,         label: 'Boost a Listing', sub: 'From 500 BC', bg: 'bg-amber-50', ic: 'text-amber-600' },
-          { to: '/invite',         icon: Gift,        label: 'Invite & Earn',   sub: '500 BC / friend', bg: 'bg-violet-50', ic: 'text-violet-600' },
-        ].map(({ to, icon: Icon, label, sub, bg, ic }) => (
-          <Link key={to} to={to}
-            className="flex items-center gap-3 px-5 py-3.5 hover:bg-gray-50 transition border-b border-gray-50 last:border-0">
-            <div className={`w-9 h-9 ${bg} rounded-xl flex items-center justify-center flex-none`}>
-              <Icon size={16} className={ic} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800">{label}</p>
-              <p className="text-xs text-gray-400">{sub}</p>
-            </div>
-            <ChevronRight size={14} className="text-gray-300 flex-none" />
-          </Link>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ─── Main ─────────────────────────────────────────────────────────────────────
 export default function Wallet() {
   const { user, refreshUser } = useAuthStore();
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [selectedAmount, setSelectedAmount] = useState(1000);
-  const [customAmount, setCustomAmount] = useState('');
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
 
   const ref = searchParams.get('ref') || searchParams.get('mock_ref');
@@ -527,9 +424,8 @@ export default function Wallet() {
   });
 
   const topupMutation = useMutation({
-    mutationFn: () => {
-      const kobo = (customAmount ? parseInt(customAmount) : selectedAmount) * 100;
-      return topupWallet({ amountKobo: kobo, email: user?.email });
+    mutationFn: (amount) => {
+      return topupWallet({ amountKobo: amount * 100, email: user?.email });
     },
     onSuccess: (result) => {
       if (result.authorizationUrl) {
@@ -540,25 +436,17 @@ export default function Wallet() {
         refreshUser();
         queryClient.invalidateQueries(['payment-history']);
         toast.success('Wallet topped up (mock mode)!');
-        setSheetOpen(false);
+        setModalOpen(false);
       }
     },
     onError: (err) => toast.error(err.response?.data?.error || 'Top-up failed'),
   });
 
   const walletBalance = data?.walletBalance ?? user?.walletBalance ?? 0;
-  const finalAmount = customAmount ? parseInt(customAmount) || 0 : selectedAmount;
-
-  const topUpProps = {
-    finalAmount, selectedAmount, customAmount,
-    setSelectedAmount, setCustomAmount,
-    onTopUp: () => topupMutation.mutate(),
-    loading: topupMutation.isPending,
-  };
 
   return (
-    <div className="bg-[#F2F3F5] min-h-screen pb-16">
-      {/* Custom top bar with notification + settings */}
+    <div className="bg-[#F2F3F5] min-h-screen pb-20">
+      {/* Top bar */}
       <div className="bg-white border-b border-gray-100 flex items-center justify-between px-4 lg:px-8 h-14 sticky top-0 z-30">
         <h1 className="font-display font-bold text-base text-gray-900">My Wallet</h1>
         <div className="flex items-center gap-2">
@@ -571,33 +459,34 @@ export default function Wallet() {
         </div>
       </div>
 
-      {/* ── Mobile ── */}
-      <div className="lg:hidden px-4 pt-5 space-y-5">
-        <VirtualCard balance={walletBalance} user={user} hidden={hidden} onToggleHide={() => setHidden(h => !h)} />
-        <QuickActions onAdd={() => setSheetOpen(true)} />
-        <AccountStrip user={user} />
-        <TxList isLoading={isLoading} payments={data?.payments} />
-      </div>
-
-      {/* ── Desktop ── */}
-      <div className="hidden lg:block max-w-6xl mx-auto px-8 py-8">
-        <div className="grid grid-cols-[1fr_360px] gap-7 items-start">
-          {/* Left */}
-          <div className="space-y-5">
+      {/* Content */}
+      <div className="w-full px-4 lg:px-8 pt-5 space-y-4">
+        <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
+          {/* Left col */}
+          <div className="space-y-4">
             <VirtualCard balance={walletBalance} user={user} hidden={hidden} onToggleHide={() => setHidden(h => !h)} />
-            <QuickActions onAdd={() => setSheetOpen(true)} />
-            <AccountStrip user={user} />
+            <QuickActions onAdd={() => setModalOpen(true)} />
+            <StatStrip user={user} />
+          </div>
+          {/* Right col — transactions (desktop) */}
+          <div className="hidden lg:block">
             <TxList isLoading={isLoading} payments={data?.payments} />
           </div>
-          {/* Right */}
-          <div className="sticky top-20">
-            <DesktopTopUp {...topUpProps} />
-          </div>
+        </div>
+
+        {/* Transactions (mobile — below) */}
+        <div className="lg:hidden">
+          <TxList isLoading={isLoading} payments={data?.payments} />
         </div>
       </div>
 
-      {/* Bottom sheet (mobile + desktop) */}
-      <AddMoneySheet open={sheetOpen} onClose={() => setSheetOpen(false)} {...topUpProps} />
+      {/* Add Money modal */}
+      <AddMoneyModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onTopUp={(amount) => topupMutation.mutate(amount)}
+        loading={topupMutation.isPending}
+      />
     </div>
   );
 }

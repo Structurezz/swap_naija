@@ -44,7 +44,7 @@ export default function InviteEarn() {
   };
 
   const shareWhatsApp = () => {
-    const text = `Join me on SwapNaija — Nigeria's best barter marketplace! Use my invite code *${referralCode}* and we both earn ₦200 swap credits. Sign up here: ${referralLink}`;
+    const text = `Join me on SwapNaija — Nigeria's best barter marketplace! Use my invite code *${referralCode}* and we both earn 200 BC swap credits. Sign up here: ${referralLink}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
   };
 
@@ -64,11 +64,11 @@ export default function InviteEarn() {
       <div className={`grid grid-cols-2 gap-3 ${large ? 'lg:grid-cols-2' : ''}`}>
         <div className="bg-white/15 rounded-2xl p-3 text-center">
           <p className={`opacity-70 ${large ? 'text-sm' : 'text-xs'}`}>You earn per invite</p>
-          <p className={`font-display font-bold ${large ? 'text-3xl' : 'text-xl'}`}>₦200</p>
+          <p className={`font-display font-bold ${large ? 'text-3xl' : 'text-xl'}`}>200 <span className="text-base font-semibold">BC</span></p>
         </div>
         <div className="bg-white/15 rounded-2xl p-3 text-center">
           <p className={`opacity-70 ${large ? 'text-sm' : 'text-xs'}`}>Your friend earns</p>
-          <p className={`font-display font-bold ${large ? 'text-3xl' : 'text-xl'}`}>₦200</p>
+          <p className={`font-display font-bold ${large ? 'text-3xl' : 'text-xl'}`}>200 <span className="text-base font-semibold">BC</span></p>
         </div>
       </div>
     </div>
@@ -84,12 +84,12 @@ export default function InviteEarn() {
           <p className="text-xs text-gray-500 mt-0.5">Friends invited</p>
         </div>
         <div className="card text-center">
-          <p className="text-2xl font-display font-bold text-purple-600">₦{((data?.swapCredits || 0)).toLocaleString()}</p>
+          <p className="text-2xl font-display font-bold text-purple-600">{((data?.swapCredits || 0)).toLocaleString()} <span className="text-sm font-semibold">BC</span></p>
           <p className="text-xs text-gray-500 mt-0.5">Swap credits</p>
         </div>
         <div className="card text-center">
           <p className="text-2xl font-display font-bold text-amber-500">
-            {(data?.referralCount || 0) * 200 > 0 ? `₦${((data.referralCount) * 200).toLocaleString()}` : '₦0'}
+            {((data?.referralCount || 0) * 200).toLocaleString()} <span className="text-sm font-semibold">BC</span>
           </p>
           <p className="text-xs text-gray-500 mt-0.5">Total earned</p>
         </div>
@@ -123,7 +123,7 @@ export default function InviteEarn() {
       {!alreadyReferred && !applyDone && (
         <div className="card space-y-3">
           <h2 className="font-display font-semibold">Have a friend's code?</h2>
-          <p className="text-sm text-gray-500">Enter it below to earn ₦200 swap credits for both of you.</p>
+          <p className="text-sm text-gray-500">Enter it below to earn 200 BC swap credits for both of you.</p>
           <Input
             placeholder="e.g. AB12CD34"
             value={code}
@@ -143,7 +143,7 @@ export default function InviteEarn() {
       {(alreadyReferred || applyDone) && (
         <div className="card bg-green-50 border border-green-100 flex items-center gap-3">
           <CheckCheck size={20} className="text-green-600 flex-none" />
-          <p className="text-sm text-green-700 font-medium">You've already redeemed a referral code — ₦200 credits added!</p>
+          <p className="text-sm text-green-700 font-medium">You've already redeemed a referral code — 200 BC credits added!</p>
         </div>
       )}
     </>
@@ -155,7 +155,7 @@ export default function InviteEarn() {
       {[
         ['Share your code with friends', 'Copy your code or share the WhatsApp link.'],
         ['They sign up on SwapNaija', 'They enter your code during or after registration.'],
-        ['Both of you get ₦200 credits', 'Credits are added instantly to both accounts.'],
+        ['Both of you get 200 BC credits', 'Credits are added instantly to both accounts.'],
         ['Use credits on future features', 'Swap credits unlock escrow discounts, boosts and more.'],
       ].map(([title, desc], i) => (
         <div key={i} className="flex gap-3">
@@ -180,7 +180,7 @@ export default function InviteEarn() {
             <p className="font-medium text-sm">{r.name}</p>
             <div className="text-right">
               <p className="text-xs text-gray-400">{formatDistanceToNow(new Date(r.joinedAt), { addSuffix: true })}</p>
-              <p className="text-xs text-green-600 font-medium">+₦200</p>
+              <p className="text-xs text-green-600 font-medium">+200 <span className="text-[10px]">BC</span></p>
             </div>
           </div>
         ))}

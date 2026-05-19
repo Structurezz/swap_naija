@@ -13,7 +13,7 @@ import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 
-const COST_KOBO = 100000; // 1,000 BC
+const COST_KOBO = 100000; // 1,000 bc
 
 const ID_TYPES = [
   { value: 'nin',             label: 'National ID (NIN)',         hint: '11-digit NIN slip number' },
@@ -222,7 +222,7 @@ export default function VerifyAccount() {
         <p className="text-sm opacity-80 mt-0.5">Verified blue badge · Instant</p>
         <div className="mt-4 bg-white/15 rounded-2xl px-4 py-3 flex items-center justify-between">
           <span className="text-sm opacity-80">One-time fee</span>
-          <span className="text-2xl font-display font-bold">1,000 BC</span>
+          <span className="text-2xl font-display font-bold">1,000 <span className="text-base font-semibold opacity-80">BC</span></span>
         </div>
       </div>
 

@@ -14,7 +14,7 @@ import { formatBC } from '../../../utils/currency';
 import {
   ArrowLeftRight, Coins, Shield, AlertCircle,
   CheckCircle2, ChevronDown, Info, Wallet, ArrowDown,
-  ChevronLeft, ChevronRight, Plus,
+  ChevronLeft, ChevronRight, Plus, Search, X,
 } from 'lucide-react';
 
 const PICKER_LIMIT = 6;
@@ -78,14 +78,21 @@ function SwapProposal({ listing, currentUserId }) {
   const walletBalance = user?.walletBalance ?? 0; // in kobo
 
   const [pickerPage, setPickerPage] = useState(1);
+  const [pickerSearch, setPickerSearch] = useState('');
+
   const { data: pickerData, isLoading: pickerLoading } = useQuery({
-    queryKey: ['my-listings-picker', pickerPage],
-    queryFn:  () => getMyListings({ page: pickerPage, limit: PICKER_LIMIT }),
+    queryKey: ['my-listings-picker', pickerPage, pickerSearch],
+    queryFn:  () => getMyListings({ page: pickerPage, limit: PICKER_LIMIT, q: pickerSearch || undefined }),
     keepPreviousData: true,
   });
   const pickerListings = pickerData?.listings ?? [];
   const pickerTotal    = pickerData?.total ?? 0;
   const pickerPages    = pickerData?.pages ?? 1;
+
+  const handlePickerSearch = (val) => {
+    setPickerSearch(val);
+    setPickerPage(1);
+  };
 
   const [selectedListingId, setSelectedListingId] = useState('');
   // keep a local cache of selected listing object across pages
@@ -182,6 +189,24 @@ function SwapProposal({ listing, currentUserId }) {
           <Link to="/create" className="flex items-center gap-1 text-xs text-primary font-semibold bg-primary/8 hover:bg-primary/15 px-2.5 py-1.5 rounded-lg transition">
             <Plus size={12} /> New
           </Link>
+        </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
+          <input
+            type="text"
+            value={pickerSearch}
+            onChange={e => handlePickerSearch(e.target.value)}
+            placeholder="Search your listings…"
+            className="w-full pl-8 pr-8 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:border-primary focus:bg-white transition"
+          />
+          {pickerSearch && (
+            <button type="button" onClick={() => handlePickerSearch('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition">
+              <X size={13} />
+            </button>
+          )}
         </div>
 
         {/* "Nothing / open offer" option */}

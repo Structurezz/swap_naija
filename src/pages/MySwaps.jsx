@@ -22,6 +22,7 @@ import {
   MapPin, Shield, CheckCircle2, AlertTriangle,
   ShieldCheck, Clock, Info, ArrowLeftRight, Coins,
   ChevronLeft, ChevronRight, MessageCircle, Star, Truck, Package,
+  ExternalLink, Copy, Barcode, CalendarDays, FileText, Car,
 } from 'lucide-react';
 
 const NIGERIAN_STATES = [
@@ -213,6 +214,7 @@ function ConfirmPanel({ swap, userId }) {
 function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, respondMutation, topUpMutation, messageMutation, onAction, onReview, isDesktop }) {
   const navigate     = useNavigate();
   const swapTypeMeta = SWAP_TYPE_LABELS[swap.swapType] || SWAP_TYPE_LABELS.goods_for_goods;
+  const [trackingModal, setTrackingModal] = useState(null); // { shipment, name }
   const isInvolved   = swap.initiatorId?.id === user?.id || swap.receiverId?.id === user?.id;
 
   const getActions = () => {
@@ -346,26 +348,147 @@ function SwapDetail({ swap, user, escrowInfo, escrowMutation, confirmMutation, r
               const shipped  = swap[`${role}Shipped`];
               const shipment = swap[`${role}Shipment`];
               const nameKey  = role === 'initiator' ? swap.initiatorId?.fullName : swap.receiverId?.fullName;
+              const clickable = shipped && shipment?.trackingNumber;
               return (
-                <div key={role} className={`flex-1 rounded-xl p-2 text-xs ${shipped ? 'bg-green-50 border border-green-100' : 'bg-gray-100'}`}>
+                <button
+                  key={role}
+                  onClick={() => clickable && setTrackingModal({ shipment, name: nameKey || role })}
+                  className={`flex-1 rounded-xl p-2 text-xs text-left transition ${
+                    clickable
+                      ? 'bg-green-50 border border-green-100 hover:bg-green-100 hover:border-green-200 cursor-pointer active:scale-[0.98]'
+                      : 'bg-gray-100 cursor-default'
+                  }`}
+                >
                   <div className="flex items-center gap-1 mb-1">
                     <CheckCircle2 size={11} className={shipped ? 'text-green-600' : 'text-gray-300'} />
                     <span className={`font-medium ${shipped ? 'text-green-700' : 'text-gray-400'}`}>
                       {(nameKey || role).split(' ')[0]}
                     </span>
+                    {clickable && (
+                      <span className="ml-auto text-[10px] text-green-600 font-semibold flex items-center gap-0.5">
+                        View <ExternalLink size={9} />
+                      </span>
+                    )}
                   </div>
                   {shipment?.trackingNumber && (
                     <div className="space-y-0.5">
                       <p className="text-gray-600">{shipment.providerLabel}</p>
-                      <p className="text-gray-500 font-mono">{shipment.trackingNumber}</p>
+                      <p className="text-gray-500 font-mono truncate">{shipment.trackingNumber}</p>
                     </div>
                   )}
-                </div>
+                </button>
               );
             })}
           </div>
         </div>
       )}
+
+      {/* Shipment detail modal */}
+      <Modal
+        isOpen={!!trackingModal}
+        onClose={() => setTrackingModal(null)}
+        title="Shipment Details"
+        size="sm"
+      >
+        {trackingModal && (
+          <div className="space-y-3">
+            {/* Courier */}
+            <div className="flex items-start gap-3 py-2 border-b border-gray-100">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-none">
+                <Car size={15} className="text-blue-600" />
+              </div>
+              <div>
+                <p className="text-xs text-gray-400 font-medium mb-0.5">Courier</p>
+                <p className="text-sm font-semibold text-gray-800">{trackingModal.shipment.providerLabel || '—'}</p>
+              </div>
+            </div>
+
+            {/* Tracking number */}
+            <div className="flex items-start gap-3 py-2 border-b border-gray-100">
+              <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-none">
+                <Barcode size={15} className="text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs text-gray-400 font-medium mb-0.5">Tracking Number</p>
+                <p className="text-sm font-semibold text-gray-800 font-mono break-all">{trackingModal.shipment.trackingNumber}</p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard?.writeText(trackingModal.shipment.trackingNumber);
+                  toast.success('Tracking number copied!');
+                }}
+                className="p-1.5 rounded-lg hover:bg-gray-100 transition flex-none"
+                title="Copy tracking number"
+              >
+                <Copy size={14} className="text-gray-400" />
+              </button>
+            </div>
+
+            {/* Shipped at */}
+            {trackingModal.shipment.shippedAt && (
+              <div className="flex items-start gap-3 py-2 border-b border-gray-100">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-none">
+                  <CalendarDays size={15} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium mb-0.5">Shipped On</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {new Date(trackingModal.shipment.shippedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Est. delivery */}
+            {trackingModal.shipment.estimatedDelivery && (
+              <div className="flex items-start gap-3 py-2 border-b border-gray-100">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-none">
+                  <Clock size={15} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium mb-0.5">Estimated Delivery</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {new Date(trackingModal.shipment.estimatedDelivery).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Notes */}
+            {trackingModal.shipment.notes && (
+              <div className="flex items-start gap-3 py-2 border-b border-gray-100">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center flex-none">
+                  <FileText size={15} className="text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-xs text-gray-400 font-medium mb-0.5">Notes</p>
+                  <p className="text-sm text-gray-700">{trackingModal.shipment.notes}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Track CTA */}
+            {trackingModal.shipment.trackingUrl ? (
+              <a
+                href={trackingModal.shipment.trackingUrl.startsWith('http') ? trackingModal.shipment.trackingUrl : `https://${trackingModal.shipment.trackingUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center gap-2 w-full bg-primary hover:bg-primary/90 text-white font-semibold text-sm py-3 rounded-2xl transition active:scale-[0.98] mt-2"
+              >
+                <ExternalLink size={15} />
+                Track on {trackingModal.shipment.providerLabel || 'Courier'} Website
+              </a>
+            ) : (
+              <div className="flex items-start gap-2 bg-gray-50 border border-gray-100 rounded-xl p-3 mt-2">
+                <Info size={14} className="text-gray-400 flex-none mt-0.5" />
+                <p className="text-xs text-gray-500">
+                  No tracking link was provided. Use the tracking number above on the courier's website.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </Modal>
 
       {/* Value-gap top-up panel */}
       {isInvolved && (

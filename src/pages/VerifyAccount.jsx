@@ -13,7 +13,7 @@ import TopBar from '../components/layout/TopBar';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
 
-const COST_KOBO = 100000; // ₦1,000
+const COST_KOBO = 100000; // 1,000 BC
 
 const ID_TYPES = [
   { value: 'nin',             label: 'National ID (NIN)',         hint: '11-digit NIN slip number' },
@@ -222,7 +222,7 @@ export default function VerifyAccount() {
         <p className="text-sm opacity-80 mt-0.5">Verified blue badge · Instant</p>
         <div className="mt-4 bg-white/15 rounded-2xl px-4 py-3 flex items-center justify-between">
           <span className="text-sm opacity-80">One-time fee</span>
-          <span className="text-2xl font-display font-bold">₦1,000</span>
+          <span className="text-2xl font-display font-bold">1,000 BC</span>
         </div>
       </div>
 
@@ -254,13 +254,13 @@ export default function VerifyAccount() {
         ) : canAfford ? (
           <Button fullWidth loading={verifyMutation.isPending} onClick={() => verifyMutation.mutate()}>
             <BadgeCheck size={15} />
-            Get Verified — ₦1,000
+            Get Verified — 1,000 BC
           </Button>
         ) : (
           <div className="space-y-2">
             <div className="text-xs text-center text-red-500 flex items-center justify-center gap-1">
               <AlertCircle size={12} />
-              Wallet: ₦{(walletBalance / 100).toLocaleString()} — need ₦1,000
+              Wallet: {(walletBalance / 100).toLocaleString()} BC — need 1,000 BC
             </div>
             <Link to="/wallet?returnTo=/verify-account">
               <Button fullWidth variant="secondary">
@@ -390,7 +390,7 @@ export default function VerifyAccount() {
         {/* Disclaimer */}
         <div className="flex items-start gap-2 text-xs text-gray-400 px-1">
           <Lock size={12} className="flex-none mt-0.5" />
-          <p>Standard verification deducts ₦1,000 from your SwapNaija wallet. Premium KYC is free and reviewed within 24–48 hours.</p>
+          <p>Standard verification deducts 1,000 BC from your SwapNaija wallet. Premium KYC is free and reviewed within 24–48 hours.</p>
         </div>
       </div>
 
@@ -424,7 +424,7 @@ export default function VerifyAccount() {
 
         <div className="flex items-start gap-2 text-xs text-gray-400 mt-6">
           <Lock size={12} className="flex-none mt-0.5" />
-          <p>Standard verification deducts ₦1,000 from your wallet. Premium KYC is free and reviewed within 24–48 hours. No card details are stored.</p>
+          <p>Standard verification deducts 1,000 BC from your wallet. Premium KYC is free and reviewed within 24–48 hours. No card details are stored.</p>
         </div>
       </div>
 

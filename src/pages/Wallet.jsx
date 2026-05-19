@@ -299,7 +299,7 @@ function AddMoneyModal({ open, onClose, onTopUp, loading }) {
 }
 
 // ─── Transaction List ─────────────────────────────────────────────────────────
-function TxList({ isLoading, payments }) {
+function TxList({ isLoading, payments, total, page, totalPages, onPage }) {
   const [filter, setFilter] = useState('All');
 
   const filtered = (payments || []).filter(p => {
@@ -312,10 +312,13 @@ function TxList({ isLoading, payments }) {
 
   return (
     <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden">
+      {/* Header */}
       <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-50">
         <div>
           <h3 className="font-display font-bold text-base text-gray-900">Transactions</h3>
-          <p className="text-[11px] text-gray-400 mt-0.5">{payments?.length || 0} recent · Last 30 days</p>
+          <p className="text-[11px] text-gray-400 mt-0.5">
+            {total ?? 0} total
+          </p>
         </div>
         <div className="flex items-center bg-gray-100 rounded-xl p-1">
           {['All', 'Credits', 'Debits'].map(f => (
@@ -329,6 +332,7 @@ function TxList({ isLoading, payments }) {
         </div>
       </div>
 
+      {/* Body */}
       {isLoading ? (
         <div className="flex justify-center py-16"><Spinner /></div>
       ) : !filtered.length ? (
@@ -342,52 +346,112 @@ function TxList({ isLoading, payments }) {
           </p>
         </div>
       ) : (
-        <div>
-          {Object.entries(groups).map(([date, items]) => (
-            <div key={date}>
-              <div className="px-5 py-2.5 bg-gray-50/80">
-                <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{date}</span>
-              </div>
-              {items.map((p, i) => {
-                const { isCredit, meta, label } = resolvePayment(p);
-                const Icon = meta.icon;
-                return (
-                  <motion.div key={p.id}
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    transition={{ delay: i * 0.02 }}
-                    className="flex items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
-                  >
-                    <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none ${isCredit ? 'bg-emerald-50' : 'bg-gray-100'}`}>
-                      <Icon size={18} className={isCredit ? 'text-emerald-600' : 'text-gray-500'} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-sm text-gray-900 truncate">
-                        {label}
-                        {p.listingId?.title && <span className="font-normal text-gray-400"> · {p.listingId.title}</span>}
-                      </p>
-                      <div className="flex items-center gap-1.5 mt-0.5">
-                        {p.status === 'success' && <CheckCircle2 size={11} className="text-emerald-500 flex-none" />}
-                        {p.status === 'pending' && <Clock3 size={11} className="text-amber-500 flex-none" />}
-                        {p.status === 'failed'  && <XCircle  size={11} className="text-red-400 flex-none" />}
-                        <p className="text-[11px] text-gray-400">{format(new Date(p.createdAt), 'h:mm a')}</p>
+        <>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${filter}-${page}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              {Object.entries(groups).map(([date, items]) => (
+                <div key={date}>
+                  <div className="px-5 py-2.5 bg-gray-50/80">
+                    <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">{date}</span>
+                  </div>
+                  {items.map((p, i) => {
+                    const { isCredit, meta, label } = resolvePayment(p);
+                    const Icon = meta.icon;
+                    return (
+                      <div key={p.id}
+                        className="flex items-center gap-4 px-5 py-4 border-b border-gray-50 last:border-0 hover:bg-gray-50/50 transition-colors"
+                      >
+                        <div className={`w-11 h-11 rounded-2xl flex items-center justify-center flex-none ${isCredit ? 'bg-emerald-50' : 'bg-gray-100'}`}>
+                          <Icon size={18} className={isCredit ? 'text-emerald-600' : 'text-gray-500'} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-sm text-gray-900 truncate">
+                            {label}
+                            {p.listingId?.title && <span className="font-normal text-gray-400"> · {p.listingId.title}</span>}
+                          </p>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            {p.status === 'success' && <CheckCircle2 size={11} className="text-emerald-500 flex-none" />}
+                            {p.status === 'pending' && <Clock3 size={11} className="text-amber-500 flex-none" />}
+                            {p.status === 'failed'  && <XCircle  size={11} className="text-red-400 flex-none" />}
+                            <p className="text-[11px] text-gray-400">{format(new Date(p.createdAt), 'h:mm a')}</p>
+                          </div>
+                        </div>
+                        <div className="text-right flex-none">
+                          <p className={`font-bold text-sm ${isCredit ? 'text-emerald-600' : 'text-gray-900'}`}>
+                            {isCredit ? '+' : '−'}{formatBC(p.amountKobo)}
+                          </p>
+                          <p className={`text-[10px] font-medium capitalize mt-0.5 ${
+                            p.status === 'success' ? 'text-emerald-500'
+                            : p.status === 'pending' ? 'text-amber-500'
+                            : 'text-red-400'
+                          }`}>{p.status}</p>
+                        </div>
                       </div>
-                    </div>
-                    <div className="text-right flex-none">
-                      <p className={`font-bold text-sm ${isCredit ? 'text-emerald-600' : 'text-gray-900'}`}>
-                        {isCredit ? '+' : '−'}{formatBC(p.amountKobo)}
-                      </p>
-                      <p className={`text-[10px] font-medium capitalize mt-0.5 ${
-                        p.status === 'success' ? 'text-emerald-500'
-                        : p.status === 'pending' ? 'text-amber-500'
-                        : 'text-red-400'
-                      }`}>{p.status}</p>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between px-5 py-4 border-t border-gray-50 bg-gray-50/50">
+              <p className="text-xs text-gray-400">
+                Page {page} of {totalPages}
+              </p>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => onPage(page - 1)}
+                  disabled={page === 1}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-700 disabled:opacity-30 transition border border-transparent hover:border-gray-200"
+                >
+                  <ChevronRight size={15} className="rotate-180" />
+                </button>
+
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter(n => n === 1 || n === totalPages || Math.abs(n - page) <= 1)
+                  .reduce((acc, n, idx, arr) => {
+                    if (idx > 0 && n - arr[idx - 1] > 1) acc.push('…');
+                    acc.push(n);
+                    return acc;
+                  }, [])
+                  .map((n, i) =>
+                    n === '…' ? (
+                      <span key={`e${i}`} className="w-8 h-8 flex items-center justify-center text-xs text-gray-400">…</span>
+                    ) : (
+                      <button
+                        key={n}
+                        onClick={() => onPage(n)}
+                        className={`w-8 h-8 rounded-xl text-xs font-bold transition ${
+                          n === page
+                            ? 'bg-primary text-white'
+                            : 'text-gray-500 hover:bg-white hover:text-gray-800 border border-transparent hover:border-gray-200'
+                        }`}
+                      >
+                        {n}
+                      </button>
+                    )
+                  )
+                }
+
+                <button
+                  onClick={() => onPage(page + 1)}
+                  disabled={page === totalPages}
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-gray-400 hover:bg-white hover:text-gray-700 disabled:opacity-30 transition border border-transparent hover:border-gray-200"
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -401,6 +465,7 @@ export default function Wallet() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [hidden, setHidden] = useState(false);
+  const [txPage, setTxPage] = useState(1);
 
   const ref = searchParams.get('ref') || searchParams.get('mock_ref');
   useEffect(() => {
@@ -419,8 +484,9 @@ export default function Wallet() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const { data, isLoading } = useQuery({
-    queryKey: ['payment-history'],
-    queryFn: () => getPaymentHistory({ limit: 30 }),
+    queryKey: ['payment-history', txPage],
+    queryFn: () => getPaymentHistory({ limit: 10, page: txPage }),
+    keepPreviousData: true,
   });
 
   const topupMutation = useMutation({
@@ -437,6 +503,7 @@ export default function Wallet() {
         queryClient.invalidateQueries(['payment-history']);
         toast.success('Wallet topped up (mock mode)!');
         setModalOpen(false);
+        setTxPage(1);
       }
     },
     onError: (err) => toast.error(err.response?.data?.error || 'Top-up failed'),
@@ -460,7 +527,7 @@ export default function Wallet() {
       </div>
 
       {/* Content */}
-      <div className="w-full px-4 lg:px-8 pt-5 space-y-4">
+      <div className="w-full px-4 lg:px-8 pt-5 space-y-4 pb-8">
         <div className="lg:grid lg:grid-cols-2 lg:gap-6 space-y-4 lg:space-y-0">
           {/* Left col */}
           <div className="space-y-4">
@@ -470,13 +537,26 @@ export default function Wallet() {
           </div>
           {/* Right col — transactions (desktop) */}
           <div className="hidden lg:block">
-            <TxList isLoading={isLoading} payments={data?.payments} />
+            <TxList
+              isLoading={isLoading}
+              payments={data?.payments}
+              total={data?.total ?? 0}
+              page={txPage}
+              totalPages={data?.pages ?? 1}
+              onPage={setTxPage}
+            />
           </div>
         </div>
-
-        {/* Transactions (mobile — below) */}
+        {/* Transactions (mobile) */}
         <div className="lg:hidden">
-          <TxList isLoading={isLoading} payments={data?.payments} />
+          <TxList
+            isLoading={isLoading}
+            payments={data?.payments}
+            total={data?.total ?? 0}
+            page={txPage}
+            totalPages={data?.pages ?? 1}
+            onPage={setTxPage}
+          />
         </div>
       </div>
 

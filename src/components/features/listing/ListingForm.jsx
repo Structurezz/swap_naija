@@ -19,8 +19,8 @@ const NIGERIAN_STATES = [
 ];
 
 const schema = z.object({
-  title:           z.string().min(3, 'Title must be at least 3 characters').max(200),
-  description:     z.string().min(10, 'Description must be at least 10 characters'),
+  title:           z.string().min(1, 'Title is required').max(200),
+  description:     z.string().min(1, 'Description is required'),
   listingType:     z.enum(['goods', 'services', 'both']),
   categoryId:      z.string().optional(),
   condition:       z.string().optional(),

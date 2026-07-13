@@ -380,7 +380,7 @@ function SectionNotifications() {
 
   const EMAIL_ITEMS = [
     { key: 'swapUpdates', label: 'Swap & escrow emails',          desc: 'Proposals, acceptances, escrow deposits and confirmations' },
-    { key: 'dailyDigest', label: 'Daily digest',                  desc: 'Morning, afternoon and night summaries of your activity' },
+    { key: 'dailyDigest', label: 'Weekly digest',                 desc: 'Weekly summary of your activity, sent Monday evening' },
     { key: 'marketing',   label: 'Tips & promotions',             desc: 'Product updates, swap tips and feature releases' },
   ];
 

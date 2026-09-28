@@ -6,7 +6,7 @@ import {
   Star, ArrowLeftRight, MapPin, CalendarDays, LayoutGrid,
   MessageSquare, Bell, Wallet as WalletIcon, ChevronRight,
   Eye, EyeOff, User, KeyRound, CheckCircle2, TrendingUp,
-  Copy, Share2, CheckCheck, Settings,
+  Copy, Share2, CheckCheck, Settings, Crown, Clock, AlertCircle,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { getPublicProfile } from '../api/users.api';
@@ -267,8 +267,13 @@ function SectionSecurity() {
 // ─── Section: Verification ────────────────────────────────────────────────────
 function SectionVerification({ user }) {
   const { user: me, refreshUser } = useAuthStore();
-  const isVerified = user?.verification === 'verified';
-  const walletBal  = me?.walletBalance ?? 0;  // use auth store for live balance
+  const tier       = user?.verification ?? 'basic';
+  const isPremium  = tier === 'premium';
+  const isVerified = tier === 'verified';
+  const kyc        = user?.kyc;
+  const kycPending  = kyc?.status === 'pending'  && !isPremium;
+  const kycRejected = kyc?.status === 'rejected' && !isPremium;
+  const walletBal  = me?.walletBalance ?? 0;
   const canAfford  = walletBal >= 100000;
 
   const mutation = useMutation({
@@ -276,6 +281,49 @@ function SectionVerification({ user }) {
     onSuccess: () => { refreshUser(); toast.success('Account verified!'); },
     onError:   (e) => toast.error(e.response?.data?.error || 'Verification failed'),
   });
+
+  // ── Status banner content driven by backend state ───────────────────────────
+  const banner = isPremium
+    ? {
+        icon: Crown,
+        title: 'Premium Verified',
+        subtitle: `ID-verified${user.verifiedAt ? ` on ${new Date(user.verifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}`,
+        wrap: 'bg-amber-50 border-amber-200',
+        iconWrap: 'bg-amber-500 text-white',
+      }
+    : isVerified
+    ? {
+        icon: ShieldCheck,
+        title: 'Standard Verified',
+        subtitle: `Verified${user.verifiedAt ? ` ${new Date(user.verifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' })}` : ''}`,
+        wrap: 'bg-primary/5 border-primary/20',
+        iconWrap: 'bg-primary text-white',
+      }
+    : kycPending
+    ? {
+        icon: Clock,
+        title: 'Premium KYC Under Review',
+        subtitle: `Submitted ${kyc?.submittedAt ? new Date(kyc.submittedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'short', year: 'numeric' }) : ''} — usually approved within minutes`,
+        wrap: 'bg-amber-50 border-amber-200',
+        iconWrap: 'bg-amber-400 text-white',
+      }
+    : kycRejected
+    ? {
+        icon: AlertCircle,
+        title: 'Premium KYC Rejected',
+        subtitle: kyc?.rejectionReason || 'Please resubmit a clear photo of your government-issued ID',
+        wrap: 'bg-red-50 border-red-200',
+        iconWrap: 'bg-red-500 text-white',
+      }
+    : {
+        icon: ShieldCheck,
+        title: 'Not Verified',
+        subtitle: 'Get a verified badge to build trust and rank higher in search',
+        wrap: 'bg-gray-50 border-gray-200',
+        iconWrap: 'bg-gray-200 text-gray-400',
+      };
+
+  const BannerIcon = banner.icon;
 
   const BENEFITS = [
     { icon: ShieldCheck,  color: 'text-primary',   label: 'Verified badge on your profile' },
@@ -289,38 +337,59 @@ function SectionVerification({ user }) {
       <SectionHeader title="Identity Verification" desc="Build trust and rank higher in search" />
 
       {/* Status banner */}
-      <div className={`rounded-2xl p-5 flex items-center gap-4 border ${
-        isVerified ? 'bg-primary/5 border-primary/20' : 'bg-gray-50 border-gray-200'
-      }`}>
-        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-none ${
-          isVerified ? 'bg-primary text-white' : 'bg-gray-200 text-gray-400'
-        }`}>
-          <ShieldCheck size={22} />
+      <div className={`rounded-2xl p-5 flex items-center gap-4 border ${banner.wrap}`}>
+        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-none ${banner.iconWrap}`}>
+          <BannerIcon size={22} />
         </div>
-        <div className="flex-1">
-          <p className="font-semibold text-gray-900">{isVerified ? 'Account Verified' : 'Not Verified'}</p>
-          <p className="text-xs text-gray-500 mt-0.5">
-            {isVerified
-              ? `Verified ${user.verifiedAt ? new Date(user.verifiedAt).toLocaleDateString('en-NG', { day: 'numeric', month: 'long', year: 'numeric' }) : ''}`
-              : 'One-time ₦1,000 fee from your wallet'}
-          </p>
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-gray-900">{banner.title}</p>
+          <p className="text-xs text-gray-500 mt-0.5">{banner.subtitle}</p>
         </div>
-        <TrustBadge verification={user.verification} />
+        <TrustBadge verification={tier} />
       </div>
 
-      {/* Benefits */}
+      {/* Benefits — mark items that apply based on tier */}
       <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-3">
         <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">What you get</p>
         {BENEFITS.map(({ icon: Icon, color, label }) => (
           <div key={label} className="flex items-center gap-3">
             <Icon size={16} className={color} />
             <p className="text-sm text-gray-700 flex-1">{label}</p>
-            {isVerified && <CheckCircle2 size={15} className="text-primary flex-none" />}
+            {(isVerified || isPremium) && <CheckCircle2 size={15} className="text-primary flex-none" />}
           </div>
         ))}
       </div>
 
-      {!isVerified && (
+      {/* CTAs based on state */}
+      {isPremium ? (
+        <Link to="/verify-account">
+          <Button fullWidth variant="outline">View verification details</Button>
+        </Link>
+      ) : kycPending ? (
+        <Link to="/verify-account">
+          <Button fullWidth variant="outline">
+            <Clock size={14} /> View KYC status
+          </Button>
+        </Link>
+      ) : kycRejected ? (
+        <Link to="/verify-account">
+          <Button fullWidth>Resubmit KYC</Button>
+        </Link>
+      ) : isVerified ? (
+        <div className="space-y-2">
+          <div className="rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 flex items-center gap-3">
+            <Crown size={18} className="text-amber-600 flex-none" />
+            <p className="text-sm text-amber-800 flex-1">
+              Upgrade to <strong>Premium</strong> — free ID verification for a gold badge and maximum trust.
+            </p>
+          </div>
+          <Link to="/verify-account">
+            <Button fullWidth>
+              <Crown size={14} /> Apply for Premium
+            </Button>
+          </Link>
+        </div>
+      ) : (
         <div className={`rounded-2xl px-5 py-4 flex items-center justify-between border ${
           canAfford ? 'bg-emerald-50 border-emerald-100' : 'bg-amber-50 border-amber-100'
         }`}>
@@ -329,7 +398,7 @@ function SectionVerification({ user }) {
               {canAfford ? 'Sufficient balance' : 'Insufficient balance'}
             </p>
             <p className="text-xs text-gray-500 mt-0.5">
-              Wallet: ₦{(walletBal / 100).toLocaleString()} · Needed: ₦1,000
+              Wallet: ₦{(walletBal / 100).toLocaleString()} · Standard: ₦1,000 · Premium: free
             </p>
           </div>
           {canAfford
@@ -688,11 +757,15 @@ export default function Profile() {
                     <div className="w-24 h-24 rounded-2xl ring-4 ring-white shadow-lg overflow-hidden">
                       <Avatar src={user.avatarUrl} name={user.fullName} size="xl" className="!w-24 !h-24 !rounded-2xl !text-3xl" />
                     </div>
-                    {user.verification === 'verified' && (
+                    {user.verification === 'premium' ? (
+                      <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center ring-2 ring-white">
+                        <Crown size={13} className="text-white" />
+                      </div>
+                    ) : user.verification === 'verified' ? (
                       <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-primary rounded-full flex items-center justify-center ring-2 ring-white">
                         <ShieldCheck size={13} className="text-white" />
                       </div>
-                    )}
+                    ) : null}
                   </div>
                   <div className="flex-1 pt-1">
                     <div className="flex items-center gap-2.5">

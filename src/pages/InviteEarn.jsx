@@ -58,7 +58,7 @@ export default function InviteEarn() {
         </div>
         <div>
           <h1 className={`font-display font-bold ${large ? 'text-3xl' : 'text-xl'}`}>Invite &amp; Earn</h1>
-          <p className={`opacity-80 ${large ? 'text-base mt-1' : 'text-sm'}`}>Share SwapNaija, earn swap credits</p>
+          <p className={`opacity-80 ${large ? 'text-base mt-1' : 'text-sm'}`}>Share SwapNaija, earn barter credits</p>
         </div>
       </div>
       <div className={`grid grid-cols-2 gap-3 ${large ? 'lg:grid-cols-2' : ''}`}>
@@ -85,7 +85,7 @@ export default function InviteEarn() {
         </div>
         <div className="card text-center">
           <p className="text-2xl font-display font-bold text-purple-600">{((data?.swapCredits || 0)).toLocaleString()} <span className="text-sm font-semibold">BC</span></p>
-          <p className="text-xs text-gray-500 mt-0.5">Swap credits</p>
+          <p className="text-xs text-gray-500 mt-0.5">Barter credits</p>
         </div>
         <div className="card text-center">
           <p className="text-2xl font-display font-bold text-amber-500">
@@ -123,7 +123,7 @@ export default function InviteEarn() {
       {!alreadyReferred && !applyDone && (
         <div className="card space-y-3">
           <h2 className="font-display font-semibold">Have a friend's code?</h2>
-          <p className="text-sm text-gray-500">Enter it below to earn 200 BC swap credits for both of you.</p>
+          <p className="text-sm text-gray-500">Enter it below to earn 200 BC  for both of you.</p>
           <Input
             placeholder="e.g. AB12CD34"
             value={code}
@@ -155,8 +155,8 @@ export default function InviteEarn() {
       {[
         ['Share your code with friends', 'Copy your code or share the WhatsApp link.'],
         ['They sign up on SwapNaija', 'They enter your code during or after registration.'],
-        ['Both of you get 200 BC credits', 'Credits are added instantly to both accounts.'],
-        ['Use credits on future features', 'Swap credits unlock escrow discounts, boosts and more.'],
+        ['Both of you get 200 BC ', 'Credits are added instantly to both accounts.'],
+        ['Use credits on future features', 'Barter credits unlock escrow discounts, boosts and more.'],
       ].map(([title, desc], i) => (
         <div key={i} className="flex gap-3">
           <span className="w-6 h-6 rounded-full bg-purple-100 text-purple-600 text-xs font-bold flex items-center justify-center flex-none mt-0.5">{i + 1}</span>

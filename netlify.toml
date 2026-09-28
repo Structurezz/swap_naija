@@ -3,20 +3,20 @@
   publish = "dist"
 
 [build.environment]
-  VITE_API_URL = "https://swapnigeria-production.up.railway.app"
-  VITE_SOCKET_URL = "https://swapnigeria-production.up.railway.app"
+  VITE_API_URL = "https://swap-naija-production.up.railway.app"
+  VITE_SOCKET_URL = "https://swap-naija-production.up.railway.app"
 
 # Redirect /api/files/* to Railway (301 so browser follows directly)
 [[redirects]]
   from = "/api/files/*"
-  to = "https://swapnigeria-production.up.railway.app/api/files/:splat"
+  to = "https://swap-naija-production.up.railway.app/api/files/:splat"
   status = 301
   force = true
 
 # Proxy all other /api/* calls to Railway backend
 [[redirects]]
   from = "/api/*"
-  to = "https://swapnigeria-production.up.railway.app/api/:splat"
+  to = "https://swap-naija-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
